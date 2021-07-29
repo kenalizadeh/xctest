@@ -5,7 +5,7 @@ import json
 
 sys.dont_write_bytecode = True
 
-def main(scriptdir, workdir):
+def main(workdir, scriptdir):
     templateLoader = jinja2.FileSystemLoader(searchpath=scriptdir)
     print('workdir', workdir)
     templateEnv = jinja2.Environment(loader=templateLoader)
