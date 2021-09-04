@@ -9,12 +9,6 @@ function xctest() {
       return
   fi
 
-  WORKSPACE_FILE=$(find $WORK_DIR -maxdepth 1 -type d -name "IBAMobileBank.xcworkspace")
-  if [ -z "$WORKSPACE_FILE" ]; then
-    echo -e "Workdir is invalid: $WORK_DIR\nXcode workspace not found"
-    return
-  fi
-
   if ! [ -z "$2" ]; then
     SCRIPT_DIR="$2"
   fi
@@ -23,9 +17,14 @@ function xctest() {
       return
   fi
 
-  SCRIPT_FILE=$(find $SCRIPT_DIR -maxdepth 1 -type f -name "xctest.sh")
-  if [ -z "$SCRIPT_FILE" ]; then
-    echo "Script directory is invalid: $SCRIPT_DIR"
+  SQUAD_NAME='ALL'
+  if ! [ -z "$3" ]; then
+    SQUAD_NAME="$3"
+  fi
+
+  WORKSPACE_FILE=$(find $WORK_DIR -maxdepth 1 -type d -name "*.xcworkspace")
+  if [ -z "$WORKSPACE_FILE" ]; then
+    echo -e "Workdir is invalid: $WORK_DIR\nXcode workspace not found"
     return
   fi
 
@@ -39,9 +38,15 @@ function xctest() {
   rm -rf "$WORK_DIR/../DerivedData" --force
   rm -rf "$WORK_DIR/../CoverageReport" --force
 
+  # Check if xcpretty is installed
+  if ! command -v xcpretty &> /dev/null; then
+    echo "Installing xcpretty..."
+    gem install xcpretty
+  fi
+
   set -o pipefail && xcodebuild \
-  -workspace IBAMobileBank.xcworkspace \
-  -scheme IBAMobileBank-Dev \
+  -workspace $WORKSPACE_FILE \
+  -scheme IBAMobileBank-Production \
   -sdk iphonesimulator \
   -destination platform="iOS Simulator,name=iPhone 11 Pro" \
   -derivedDataPath "$WORK_DIR/../DerivedData" \
@@ -55,9 +60,9 @@ function xctest() {
     # Run xccov with json output format
     xcrun xccov view --report --json $WORK_DIR/../DerivedData/Logs/Test/*.xcresult > $WORK_DIR/../CoverageReport/raw_report.json
     # Render html from template
-    python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR
+    python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR $SQUAD_NAME
     # Delete raw report json file
-    rm -rf "$WORK_DIR/../CoverageReport/raw_report.json" --force
+    # rm -rf "$WORK_DIR/../CoverageReport/raw_report.json" --force
     # Copy resources to coverage report directory
     cp -a "$SCRIPT_DIR/resources/." "$WORK_DIR/../CoverageReport/"
   else

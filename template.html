@@ -9,36 +9,34 @@
         <header><div class="row"><a href="index.html"><img src="avatar.png" alt="Liondoge logo"></a></div></header><div class="row"><div id="reports">
         <h2>Files for "IBAMobileBank.xcodeproj"</h2>
         <h4>
-        <span>Total Coverage : </span><span class="cov_low" id="total_coverage">{{ "%.2f"|format(data.lineCoverage * 100) }} %</span>
+        <span>Total Coverage : </span><span class="cov_low" id="total_coverage">{{ "%.2f"|format(total_coverage * 100) }} %</span>
         </h4>
         <input class="search" placeholder="Search"><table class="coverage_list" cellspacing="0" cellpadding="0">
         <thead><tr>
             <th class="col_num sort" data-sort="data_percentage">%</th>
             <th class="sort" data-sort="data_filename">File</th>
-            <th class="col_percent sort" data-sort="data_lines">Lines</th>
-            <th class="col_percent sort" data-sort="data_relevant">Relevant</th>
+            <!-- <th class="col_percent sort" data-sort="data_relevant">Relevant</th> -->
             <th class="col_percent sort" data-sort="data_covered">Covered</th>
-            <th class="col_percent sort" data-sort="data_missed">Missed</th>
+            <th class="col_percent sort" data-sort="data_lines">Lines</th>
+            <!-- <th class="col_percent sort" data-sort="data_missed">Missed</th> -->
         </tr></thead>
         <tbody class="list">
-            {% for target in data.targets %}
-                {% for file in target.files %}
-                    <tr>
-                        {% set lineCoverage = "%.2f"|format(file.lineCoverage * 100) %}
-                        {% if lineCoverage|int < 65 %}
-                        <td><span class="percentage cov_low data_percentage">{{ lineCoverage }}</span></td>
-                        {% elif lineCoverage|int < 85 %}
-                        <td><span class="percentage cov_medium data_percentage">{{ lineCoverage }}</span></td>
-                        {% else %}
-                        <td><span class="percentage cov_high data_percentage">{{ lineCoverage }}</span></td>
-                        {% endif %}
-                        <td class="data_filename"><a href="{{ file.path }}">{{ file.name }}</a></td>
-                        <td class="data_lines">{{ file.executableLines }}</td>
-                        <td class="data_relevant">N/A</td>
-                        <td class="data_covered">{{ file.coveredLines }}</td>
-                        <td class="data_missed">N/A</td>
-                    </tr>
-                {% endfor %}
+            {% for file in files %}
+                <tr>
+                    {% set lineCoverage = "%.2f"|format(file.lineCoverage * 100) %}
+                    {% if lineCoverage|int < 65 %}
+                    <td><span class="percentage cov_low data_percentage">{{ lineCoverage }}</span></td>
+                    {% elif lineCoverage|int < 85 %}
+                    <td><span class="percentage cov_medium data_percentage">{{ lineCoverage }}</span></td>
+                    {% else %}
+                    <td><span class="percentage cov_high data_percentage">{{ lineCoverage }}</span></td>
+                    {% endif %}
+                    <td class="data_filename"><a href="{{ file.path }}">{{ file.name }}</a></td>
+                    <td class="data_covered">{{ file.coveredLines }}</td>
+                    <td class="data_lines">{{ file.executableLines }}</td>
+                    <!-- <td class="data_relevant">N/A</td> -->
+                    <!-- <td class="data_missed">N/A</td> -->
+                </tr>
             {% endfor %}
         </tbody>
     </table>
