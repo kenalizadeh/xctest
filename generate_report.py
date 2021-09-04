@@ -19,6 +19,7 @@ def main(workdir, scriptdir, squad_name):
 
     selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
     if not selected_filenames:
+        squad_name = 'All Squads'
         selected_filenames = flatten([x['filenames'] for x in configs['squads']])
 
     files = []
@@ -29,7 +30,7 @@ def main(workdir, scriptdir, squad_name):
 
     filenames = [x['name'] for x in files]
 
-    print('\n\u2705 DONE! Coverage report generated from {count} out of {total} files.\n'.format(count=len(files), total=len(selected_filenames)))
+    print('\n\u2705 DONE! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(selected_filenames), squad_name))
 
     missing_files = list(set(selected_filenames) - set(filenames))
     if missing_files:
