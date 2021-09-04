@@ -24,7 +24,7 @@ def main(workdir, scriptdir, squad_name):
     files = []
     for target in json_data['targets']:
         for file in target['files']:
-            if file['name'] in selected_filenames:
+            if any(name in file['name'] for name in selected_filenames):
                 files.append(file)
 
     filenames = [x['name'] for x in files]
