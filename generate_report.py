@@ -15,10 +15,10 @@ def main(workdir, scriptdir, squad_name):
         files = []
         for target in json_data['targets']:
             for file in target['files']:
-                if any(name in file['path'] for name in selected_filenames):
+                if any([x in file['path'] for x in selected_filenames]):
                     files.append(file)
 
-        filenames = [x['name'] for x in files]
+        filenames = [x for x in selected_filenames if any([x in file['path'] for file in files])]
 
         print('\n\u2705 DONE! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(selected_filenames), squad_name))
 
@@ -27,13 +27,13 @@ def main(workdir, scriptdir, squad_name):
             print('\u26A0\uFE0F  {count} File(s) not found:'.format(count=len(missing_files)))
             [print(' - {}'.format(x)) for x in missing_files]
 
-        # covered_lines = sum([x['coveredLines'] for x in files])
+        covered_lines = sum([x['coveredLines'] for x in files])
 
-        # executable_lines = sum([x['executableLines'] for x in files])
+        executable_lines = sum([x['executableLines'] for x in files])
 
-        # total_coverage = covered_lines / executable_lines if executable_lines else 0
+        total_coverage = covered_lines / executable_lines if executable_lines else 0
 
-        total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
+        # total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
 
         print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m'.format(total_coverage))
 
