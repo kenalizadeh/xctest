@@ -25,3 +25,5 @@ Will skip tests and generate coverage report for all squads.
 Will skip tests and generate coverage report for ADS squad.
 
 # Screenshots
+
+![alt text](https://github.com/kenalizadeh/xctest/blob/master/screenshot.png)
