@@ -4,7 +4,7 @@
         {
             "filenames":
             [
-                "AccountOrderSingleton.swift",
+                "IBAMobileBank/Story/MobileBankingSquad/Others/Scenes/AccountOrder/ViewModel/AccountOrderSingleton.swift",
                 "AccountsEndpoints.swift",
                 "AniPayAlias.swift",
                 "AniPayAccountHeaderCell.swift",

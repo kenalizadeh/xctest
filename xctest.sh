@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#Set the field separator to new line
-IFS=$'\n'
-
 function xctest() {
   if ! [ -z "$1" ]; then
     WORK_DIR="$1"
@@ -30,41 +27,56 @@ function xctest() {
     return
   fi
 
-  if test -f "Project.swift";
-  then
-    echo "Generating project file with Tuist"
-    tuist generate
-  fi
-
   WORKSPACE_FILE=$(find $WORK_DIR -maxdepth 1 -type d -name "*.xcworkspace")
   if [ -z "$WORKSPACE_FILE" ]; then
     echo -e "Workdir is invalid: $WORK_DIR\nXcode workspace not found"
     return
   fi
 
-  # Clear build & coverage report folders
-  rm -rf "$WORK_DIR/../DerivedData" --force
-  rm -rf "$WORK_DIR/../CoverageReport" --force
+  WORKSPACE_FILE_NAME=$(basename $WORKSPACE_FILE)
 
-  # Check if xcpretty is installed
-  if ! command -v xcpretty &> /dev/null; then
-    echo "Installing xcpretty..."
-    gem install xcpretty
+  if [[ $3 != "--skip-tests" && $2 != "--skip-tests" ]];
+  then
+    if test -f "Project.swift";
+    then
+      echo "Generating project file with Tuist"
+      tuist generate
+    fi
+
+    # Clear build & coverage report folders
+    rm -rf "$WORK_DIR/../DerivedData" --force
+    rm -rf "$WORK_DIR/../CoverageReport" --force
+
+    # Check if xcpretty is installed
+    if ! command -v xcpretty &> /dev/null; then
+      echo "Installing xcpretty..."
+      gem install xcpretty
+    fi
+
+    echo "- Running tests for $WORKSPACE_FILE_NAME..."
+
+    set -o pipefail && xcodebuild \
+    -workspace $WORKSPACE_FILE_NAME \
+    -scheme IBAMobileBank-Production \
+    -sdk iphonesimulator \
+    -destination platform="iOS Simulator,name=iPhone 11 Pro" \
+    -derivedDataPath "$WORK_DIR/../DerivedData" \
+    -enableCodeCoverage YES \
+    test | xcpretty --test -s --color
+
+    if [[ $? == 0 ]]; then
+      echo "✅ Unit Tests Passed. Good job!"
+    else
+      echo "🔴 Unit Tests Failed. Check the log output for more information"
+      exit 1
+    fi
+  else
+    echo "- Skipped tests for $WORKSPACE_FILE_NAME..."
   fi
 
-  set -o pipefail && xcodebuild \
-  -workspace $WORKSPACE_FILE \
-  -scheme IBAMobileBank-Production \
-  -sdk iphonesimulator \
-  -destination platform="iOS Simulator,name=iPhone 11 Pro" \
-  -derivedDataPath "$WORK_DIR/../DerivedData" \
-  -enableCodeCoverage YES \
-  test | xcpretty --test -s --color
-
   if [[ $? == 0 ]]; then
-    echo "✅ Unit Tests Passed. Good job!"
     # Create CoverageReport directory
-    mkdir "$WORK_DIR/../CoverageReport"
+    mkdir -p "$WORK_DIR/../CoverageReport"
     # Run xccov with json output format
     xcrun xccov view --report --json $WORK_DIR/../DerivedData/Logs/Test/*.xcresult > $WORK_DIR/../CoverageReport/raw_report.json
     # Render html from template
@@ -73,7 +85,5 @@ function xctest() {
     # rm -rf "$WORK_DIR/../CoverageReport/raw_report.json" --force
     # Copy resources to coverage report directory
     cp -a "$SCRIPT_DIR/resources/." "$WORK_DIR/../CoverageReport/"
-  else
-    echo "🔴 Unit Tests Failed. Check the log output for more information"
   fi
 }
