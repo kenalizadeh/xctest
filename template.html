@@ -15,10 +15,8 @@
         <thead><tr>
             <th class="col_num sort" data-sort="data_percentage">%</th>
             <th class="sort" data-sort="data_filename">File</th>
-            <!-- <th class="col_percent sort" data-sort="data_relevant">Relevant</th> -->
             <th class="col_percent sort" data-sort="data_covered">Covered</th>
             <th class="col_percent sort" data-sort="data_lines">Lines</th>
-            <!-- <th class="col_percent sort" data-sort="data_missed">Missed</th> -->
         </tr></thead>
         <tbody class="list">
             {% for file in files %}
@@ -34,8 +32,6 @@
                     <td class="data_filename"><a href="{{ file.path }}">{{ file.name }}</a></td>
                     <td class="data_covered">{{ file.coveredLines }}</td>
                     <td class="data_lines">{{ file.executableLines }}</td>
-                    <!-- <td class="data_relevant">N/A</td> -->
-                    <!-- <td class="data_missed">N/A</td> -->
                 </tr>
             {% endfor %}
         </tbody>
