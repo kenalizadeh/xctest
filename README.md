@@ -4,6 +4,7 @@ Tool for delivering squad-specific code coverage report with html generation.
 
 # Installation
 
+`source path/to/xctest/xctest.sh`
 After adding xctest.sh source to your shell profile, you're ready to go.
 
 # Usage
