@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#Set the field separator to new line
+IFS=$'\n'
+
 function xctest() {
   if ! [ -z "$1" ]; then
     WORK_DIR="$1"
@@ -9,22 +12,21 @@ function xctest() {
       return
   fi
 
-  if ! [ -z "$2" ]; then
-    SCRIPT_DIR="$2"
-  fi
-  if ! [ -d "$SCRIPT_DIR" ]; then
-      echo "xctest: no such directory: $SCRIPT_DIR"
-      return
-  fi
-
   SQUAD_NAME='ALL'
-  if ! [ -z "$3" ]; then
-    SQUAD_NAME="$3"
+  if ! [ -z "$2" ]; then
+    SQUAD_NAME="$2"
   fi
 
-  WORKSPACE_FILE=$(find $WORK_DIR -maxdepth 1 -type d -name "*.xcworkspace")
-  if [ -z "$WORKSPACE_FILE" ]; then
-    echo -e "Workdir is invalid: $WORK_DIR\nXcode workspace not found"
+  mdfind -name "generate_report.py" | while read DIR; do
+      DIRNAME=$(dirname "$DIR")
+      if [[ -f "$DIRNAME/template.html" ]] && [[ -f "$DIRNAME/xctest.sh" ]] && [[ -f "$DIRNAME/config.json" ]];
+      then
+          SCRIPT_DIR=$DIRNAME
+      fi
+  done
+
+  if [ -z "$SCRIPT_DIR" ]; then
+    echo -e "Scriptdir not found"
     return
   fi
 
@@ -32,6 +34,12 @@ function xctest() {
   then
     echo "Generating project file with Tuist"
     tuist generate
+  fi
+
+  WORKSPACE_FILE=$(find $WORK_DIR -maxdepth 1 -type d -name "*.xcworkspace")
+  if [ -z "$WORKSPACE_FILE" ]; then
+    echo -e "Workdir is invalid: $WORK_DIR\nXcode workspace not found"
+    return
   fi
 
   # Clear build & coverage report folders

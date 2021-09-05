@@ -6,10 +6,38 @@ import json
 sys.dont_write_bytecode = True
 
 def main(workdir, scriptdir, squad_name):
-    templateLoader = jinja2.FileSystemLoader(searchpath=scriptdir)
-    templateEnv = jinja2.Environment(loader=templateLoader)
-    TEMPLATE_FILE = "template.html"
-    template = templateEnv.get_template(TEMPLATE_FILE)
+    def generate_report_for_squad(squad_name):
+        selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
+        if not selected_filenames:
+            print('\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
+            return [], 0
+
+        files = []
+        for target in json_data['targets']:
+            for file in target['files']:
+                if any(name in file['name'] for name in selected_filenames):
+                    files.append(file)
+
+        filenames = [x['name'] for x in files]
+
+        print('\n\u2705 DONE! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(selected_filenames), squad_name))
+
+        missing_files = list(set(selected_filenames) - set(filenames))
+        if missing_files:
+            print('\u26A0\uFE0F  {count} File(s) not found:'.format(count=len(missing_files)))
+            [print(' - {}'.format(x)) for x in missing_files]
+
+        # covered_lines = sum([x['coveredLines'] for x in files])
+
+        # executable_lines = sum([x['executableLines'] for x in files])
+
+        # total_coverage = covered_lines / executable_lines if executable_lines else 0
+
+        total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
+
+        print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m'.format(total_coverage))
+
+        return files, total_coverage
 
     data = open('{dir}/../CoverageReport/raw_report.json'.format(dir=workdir),'r')
     json_data = json.loads(data.read())
@@ -17,35 +45,27 @@ def main(workdir, scriptdir, squad_name):
     config_data = open('{dir}/config.json'.format(dir=scriptdir))
     configs = json.loads(config_data.read())
 
-    selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
-    if not selected_filenames:
-        squad_name = 'All Squads'
-        selected_filenames = flatten([x['filenames'] for x in configs['squads']])
+    squad_names = [x['name'] for x in configs['squads']]
+    selected_squads = [squad_name]
+    squad_found = squad_name in squad_names
+    if not squad_found:
+        selected_squads = squad_names
 
-    files = []
-    for target in json_data['targets']:
-        for file in target['files']:
-            if any(name in file['name'] for name in selected_filenames):
-                files.append(file)
+    for name in selected_squads:
+        files, total_coverage = generate_report_for_squad(name)
 
-    filenames = [x['name'] for x in files]
+    templateLoader = jinja2.FileSystemLoader(searchpath=scriptdir)
+    templateEnv = jinja2.Environment(loader=templateLoader)
+    TEMPLATE_FILE = "template.html"
+    template = templateEnv.get_template(TEMPLATE_FILE)
 
-    print('\n\u2705 DONE! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(selected_filenames), squad_name))
+    if not files and squad_found:
+        print('\n\u26A0\uFE0F  Could not generate report.')
+        return
 
-    missing_files = list(set(selected_filenames) - set(filenames))
-    if missing_files:
-        print('\u26A0\uFE0F  {count} File(s) not found:'.format(count=len(missing_files)))
-        [print(' - {}'.format(x)) for x in missing_files]
-
-    covered_lines = sum([x['coveredLines'] for x in files])
-
-    executable_lines = sum([x['executableLines'] for x in files])
-
-    total_coverage = covered_lines / executable_lines if executable_lines else 0
-
-    # total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
-
-    print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m\n'.format(total_coverage))
+    if len(selected_squads) > 1:
+        files = flatten([x['files'] for x in json_data['targets']])
+        total_coverage = json_data['lineCoverage']
 
     outputText = template.render(files=files, total_coverage=total_coverage)
 
@@ -53,7 +73,7 @@ def main(workdir, scriptdir, squad_name):
     file.write(outputText)
     file.close()
 
-    print("\u2139\uFE0F  Enter following command to view the report")
+    print("\n\u2139\uFE0F  Enter following command to view the report")
     print('>  open {dir}/../CoverageReport/report.html'.format(dir=workdir))
 
 def flatten(t):
