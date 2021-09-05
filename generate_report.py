@@ -9,7 +9,7 @@ def main(workdir, scriptdir, squad_name):
     def generate_report_for_squad(squad_name):
         selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
         if not selected_filenames:
-            print('\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
+            print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
             return [], 0
 
         files = []
