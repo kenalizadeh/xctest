@@ -81,7 +81,7 @@ function xctest() {
   # Render html from template
   python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR $SQUAD_NAME
   # Delete raw report json file
-  rm -rf "$WORK_DIR/../CoverageReport/raw_report.json" --force
+  # rm -rf "$WORK_DIR/../CoverageReport/raw_report.json" --force
   # Copy resources to coverage report directory
   cp -a "$SCRIPT_DIR/resources/." "$WORK_DIR/../CoverageReport/"
 }
