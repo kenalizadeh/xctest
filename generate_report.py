@@ -54,10 +54,10 @@ def main(workdir, scriptdir, squad_name):
     for name in selected_squads:
         files, total_coverage = generate_report_for_squad(name)
 
-    templateLoader = jinja2.FileSystemLoader(searchpath=scriptdir)
-    templateEnv = jinja2.Environment(loader=templateLoader)
-    TEMPLATE_FILE = "template.html"
-    template = templateEnv.get_template(TEMPLATE_FILE)
+    template_loader = jinja2.FileSystemLoader(searchpath=scriptdir)
+    template_env = jinja2.Environment(loader=template_loader)
+    template_file = "template.html"
+    template = template_env.get_template(template_file)
 
     if not files and squad_found:
         print('\n\u26A0\uFE0F  Could not generate report.')
