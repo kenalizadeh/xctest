@@ -78,6 +78,8 @@ function xctest() {
     echo "- Skipped tests for $WORKSPACE_FILE_NAME..."
   fi
 
+  # Install python requirements
+  pip3 install -r requirements.txt
   # Render html from template
   python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR $SQUAD_NAME
   # Delete raw report json file
