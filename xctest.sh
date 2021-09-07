@@ -69,7 +69,7 @@ function xctest() {
       # Create CoverageReport directory
       mkdir -p "$WORK_DIR/../CoverageReport"
       # Run xccov with json output format
-      xcrun xccov view --report --json $WORK_DIR/../DerivedData/Logs/Test/*.xcresult > $WORK_DIR/../CoverageReport/raw_report.json
+      xcrun xccov view --report --json $WORK_DIR/../DerivedData/Logs/Test/*.xcresult > $WORK_DIR/../DerivedData/raw_report.json
     else
       echo "🔴 Unit Tests Failed. Check the log output for more information"
       exit 1
@@ -83,5 +83,5 @@ function xctest() {
   # Render html from template
   python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR $SQUAD_NAME
   # Delete raw report json file
-  rm -rf "$WORK_DIR/../CoverageReport/raw_report.json" --force
+  rm -rf "$WORK_DIR/../DerivedData/raw_report.json" --force
 }

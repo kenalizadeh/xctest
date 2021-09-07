@@ -33,7 +33,7 @@ def main(workdir, scriptdir, squad_name):
 
         return files
 
-    data = open('{dir}/../CoverageReport/raw_report.json'.format(dir=workdir),'r')
+    data = open('{dir}/../DerivedData/raw_report.json'.format(dir=workdir),'r')
     json_data = json.loads(data.read())
 
     config_data = open('{dir}/config.json'.format(dir=scriptdir))
