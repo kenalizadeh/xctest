@@ -1,7 +1,8 @@
 #!/usr/bin/python
 import sys
-import jinja2
 import json
+import pandas as pd
+import numpy as np
 
 sys.dont_write_bytecode = True
 
@@ -10,13 +11,14 @@ def main(workdir, scriptdir, squad_name):
         selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
         if not selected_filenames:
             print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
-            return [], 0
+            return []
 
         files = []
-        for target in json_data['targets']:
-            for file in target['files']:
-                if any([x in file['path'] for x in selected_filenames]):
-                    files.append(file)
+        for file in flatten([x['files'] for x in json_data['targets']]):
+            if any([x in file['path'] for x in selected_filenames]):
+                file['squad'] = squad_name
+                file.pop('functions', None)
+                files.append(file)
 
         filenames = [x for x in selected_filenames if any([x in file['path'] for file in files])]
 
@@ -27,17 +29,9 @@ def main(workdir, scriptdir, squad_name):
             print('\u26A0\uFE0F  {count} File(s) not found:'.format(count=len(missing_files)))
             [print(' - {}'.format(x)) for x in missing_files]
 
-        covered_lines = sum([x['coveredLines'] for x in files])
+        print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m'.format(total_coverage(files)))
 
-        executable_lines = sum([x['executableLines'] for x in files])
-
-        total_coverage = covered_lines / executable_lines if executable_lines else 0
-
-        # total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
-
-        print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m'.format(total_coverage))
-
-        return files, total_coverage
+        return files
 
     data = open('{dir}/../CoverageReport/raw_report.json'.format(dir=workdir),'r')
     json_data = json.loads(data.read())
@@ -51,33 +45,40 @@ def main(workdir, scriptdir, squad_name):
     if not squad_found:
         selected_squads = squad_names
 
-    for name in selected_squads:
-        files, total_coverage = generate_report_for_squad(name)
-
-    template_loader = jinja2.FileSystemLoader(searchpath=scriptdir)
-    template_env = jinja2.Environment(loader=template_loader)
-    template_file = "template.html"
-    template = template_env.get_template(template_file)
+    files = flatten([generate_report_for_squad(x) for x in selected_squads])
 
     if not files and squad_found:
         print('\n\u26A0\uFE0F  Could not generate report.')
         return
 
-    if len(selected_squads) > 1:
-        files = flatten([x['files'] for x in json_data['targets']])
-        total_coverage = json_data['lineCoverage']
-
-    outputText = template.render(files=files, total_coverage=total_coverage)
-
-    file = open("{dir}/../CoverageReport/report.html".format(dir=workdir), "w") 
-    file.write(outputText)
-    file.close()
+    save_report(workdir, scriptdir, files)
 
     print("\n\u2139\uFE0F  Enter following command to view the report")
     print('>  open {dir}/../CoverageReport/report.html'.format(dir=workdir))
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
+
+def total_coverage(files):
+    covered_lines = sum([x['coveredLines'] for x in files])
+    executable_lines = sum([x['executableLines'] for x in files])
+    # total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
+    return covered_lines / executable_lines if executable_lines else 0
+
+def save_report(workdir, scriptdir, files):
+    pretty_json = json.dumps(files, indent=4, sort_keys=True)
+
+    file = open("{dir}/../CoverageReport/report.json".format(dir=workdir), "w") 
+    file.write(pretty_json)
+    file.close()
+
+    df = pd.DataFrame.from_dict(files)
+    df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
+    df.columns = ["Lines Covered", "Executable Lines", "Line Coverage", "File name", "File path", "Squad"]
+    df = df[["Squad", "File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
+    df.index = np.arange(1, len(df)+1)
+    df.to_csv("{dir}/../CoverageReport/report.csv".format(dir=workdir))
+    df.to_html("{dir}/../CoverageReport/report.html".format(dir=workdir))
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
