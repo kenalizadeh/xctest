@@ -33,14 +33,12 @@ function xctest() {
     return
   fi
 
-  WORKSPACE_FILE_NAME=$(basename $WORKSPACE_FILE)
-
   if [[ $3 != "--skip-tests" && $2 != "--skip-tests" ]];
   then
-    if test -f "Project.swift";
+    if test -f "$WORK_DIR/Project.swift";
     then
       echo "Generating project file with Tuist"
-      tuist generate
+      tuist generate --path $WORK_DIR
     fi
 
     # Clear build & coverage report folders
@@ -53,10 +51,10 @@ function xctest() {
       gem install xcpretty
     fi
 
-    echo "- Running tests for $WORKSPACE_FILE_NAME..."
+    echo "- Running tests for $(basename $WORKSPACE_FILE)..."
 
     set -o pipefail && xcodebuild \
-    -workspace $WORKSPACE_FILE_NAME \
+    -workspace $WORKSPACE_FILE \
     -scheme IBAMobileBank-Production \
     -sdk iphonesimulator \
     -destination platform="iOS Simulator,name=iPhone 11 Pro" \
@@ -72,7 +70,7 @@ function xctest() {
       xcrun xccov view --report --json $WORK_DIR/../DerivedData/Logs/Test/*.xcresult > $WORK_DIR/../DerivedData/raw_report.json
     else
       echo "🔴 Unit Tests Failed. Check the log output for more information"
-      exit 1
+      return 1 2>/dev/null
     fi
   else
     echo "- Skipped tests for $WORKSPACE_FILE_NAME..."
@@ -82,6 +80,4 @@ function xctest() {
   pip3 install -r requirements.txt
   # Render html from template
   python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR $SQUAD_NAME
-  # Delete raw report json file
-  rm -rf "$WORK_DIR/../DerivedData/raw_report.json" --force
 }
