@@ -51,7 +51,7 @@ def main(workdir, scriptdir, squad_name):
         print('\n\u26A0\uFE0F  Could not generate report.')
         return
 
-    save_report(workdir, scriptdir, files)
+    save_report(workdir, files)
 
     print("\n\u2139\uFE0F  Enter following command to view the report")
     print('>  open {dir}/../CoverageReport/report.html'.format(dir=workdir))
@@ -65,7 +65,7 @@ def total_coverage(files):
     # total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
     return covered_lines / executable_lines if executable_lines else 0
 
-def save_report(workdir, scriptdir, files):
+def save_report(workdir, files):
     pretty_json = json.dumps(files, indent=4, sort_keys=True)
 
     file = open("{dir}/../CoverageReport/report.json".format(dir=workdir), "w") 
