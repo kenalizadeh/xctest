@@ -29,7 +29,12 @@ def main(workdir, scriptdir, squad_name):
             print('\u26A0\uFE0F  {count} File(s) not found:'.format(count=len(missing_files)))
             [print(' - {}'.format(x)) for x in missing_files]
 
-        print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m'.format(total_coverage(files)))
+        squad_total_coverage = total_coverage(files)
+
+        for i in range(len(files)):
+            files[i]['squad_total_coverage'] = squad_total_coverage
+
+        print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m'.format(squad_total_coverage))
 
         return files
 
@@ -74,8 +79,9 @@ def save_report(workdir, files):
 
     df = pd.DataFrame.from_dict(files)
     df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
-    df.columns = ["Lines Covered", "Executable Lines", "Line Coverage", "File name", "File path", "Squad"]
-    df = df[["Squad", "File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
+    df['squad_total_coverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['squad_total_coverage']], index = df.index)
+    df.columns = ["Lines Covered", "Executable Lines", "Line Coverage", "File name", "File path", "Squad", "Squad Coverage"]
+    df = df[["Squad", "Squad Coverage", "File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
     df.index = np.arange(1, len(df)+1)
     df.to_csv("{dir}/../CoverageReport/report.csv".format(dir=workdir))
     df.to_html("{dir}/../CoverageReport/report.html".format(dir=workdir))
