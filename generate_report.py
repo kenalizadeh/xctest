@@ -7,14 +7,14 @@ import numpy as np
 sys.dont_write_bytecode = True
 
 def main(workdir, scriptdir, squad_name):
-    def generate_report_for_squad(squad_name):
+    def generate_report_for_squad(all_files, squad_name):
         selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
         if not selected_filenames:
             print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
             return []
 
         files = []
-        for file in flatten([x['files'] for x in json_data['targets']]):
+        for file in all_files:
             if any([x in file['path'] for x in selected_filenames]):
                 file['squad'] = squad_name
                 file.pop('functions', None)
@@ -50,7 +50,9 @@ def main(workdir, scriptdir, squad_name):
     if not squad_found:
         selected_squads = squad_names
 
-    files = flatten([generate_report_for_squad(x) for x in selected_squads])
+    all_files = flatten([x['files'] for x in json_data['targets']])
+
+    files = flatten([generate_report_for_squad(all_files, x) for x in selected_squads])
 
     if not files and squad_found:
         print('\n\u26A0\uFE0F  Could not generate report.')
@@ -58,8 +60,7 @@ def main(workdir, scriptdir, squad_name):
 
     save_report(workdir, files)
 
-    print("\n\u2139\uFE0F  Enter following command to view the report")
-    print('>  open {dir}/../CoverageReport/report.html'.format(dir=workdir))
+    save_report_for_undetermined_files(workdir, all_files, files)
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
@@ -85,6 +86,29 @@ def save_report(workdir, files):
     df.index = np.arange(1, len(df)+1)
     df.to_csv("{dir}/../CoverageReport/report.csv".format(dir=workdir))
     df.to_html("{dir}/../CoverageReport/report.html".format(dir=workdir))
+
+    print("\n\u2139\uFE0F  Enter following command to view coverage report.")
+    print('>  open {dir}/../CoverageReport/report.json'.format(dir=workdir))
+    print('>  open {dir}/../CoverageReport/report.csv'.format(dir=workdir))
+    print('>  open {dir}/../CoverageReport/report.html'.format(dir=workdir))
+
+def save_report_for_undetermined_files(workdir, all_files , files):
+    undetermined_files = [x for x in all_files if x['path'] not in [x['path'] for x in files]]
+    for i in range(len(undetermined_files)):
+        undetermined_files[i].pop('functions', None)
+
+    df = pd.DataFrame.from_dict(undetermined_files)
+    df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
+
+    df.columns = ["Lines Covered", "Line Coverage", "File path", "File name", "Executable Lines"]
+    df = df[["File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
+    df.index = np.arange(1, len(df)+1)
+    df.to_csv("{dir}/../CoverageReport/report_undetermined.csv".format(dir=workdir))
+    df.to_html("{dir}/../CoverageReport/report_undetermined.html".format(dir=workdir))
+
+    print("\n\u2139\uFE0F  Enter following command to view coverage report for undetermined files.")
+    print('>  open {dir}/../CoverageReport/report_undetermined.csv'.format(dir=workdir))
+    print('>  open {dir}/../CoverageReport/report_undetermined.html'.format(dir=workdir))
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
