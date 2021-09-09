@@ -28,6 +28,8 @@ function xctest() {
     return
   fi
 
+  WORKSPACE_FILE_NAME=$(basename $WORKSPACE_FILE)
+
   if [ $2 != "--skip-tests" ];
   then
     if test -f "$WORK_DIR/Project.swift";
@@ -46,7 +48,7 @@ function xctest() {
       gem install xcpretty
     fi
 
-    echo "- Running tests for $(basename $WORKSPACE_FILE)..."
+    echo "- Running tests for $WORKSPACE_FILE_NAME..."
 
     set -o pipefail && xcodebuild \
     -workspace $WORKSPACE_FILE \
