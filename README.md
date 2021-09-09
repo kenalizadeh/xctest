@@ -4,12 +4,17 @@ A Tool for delivering squad-specific code coverage report.
 
 # Installation
 
+You can execute the shell script directly or add it to your shell profile for convenience.
+
+To add xctest to your shell profile do the following:
+
 Open your shell profile.
-If you're using zsh, then
+
+If you're using zsh, then:
 
 `open ~/.zshrc`
 
-Or if you're using bash, then
+Or if you're using bash, then:
 
 `open ~/.bash_profile`
 
