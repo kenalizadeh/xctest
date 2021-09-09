@@ -59,7 +59,7 @@ function xctest() {
     -destination platform="iOS Simulator,name=iPhone 11 Pro" \
     -derivedDataPath "$WORK_DIR/../DerivedData" \
     -enableCodeCoverage YES \
-    test | xcpretty --test -s --color -r html --output "$WORK_DIR/../DerivedData"
+    test | xcpretty --test -s --color --report html --output "$WORK_DIR/../DerivedData/xcpretty/tests.html"
 
     if [[ $? == 0 ]]; then
       echo "✅ Unit Tests Passed. Good job!"
