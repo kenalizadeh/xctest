@@ -28,7 +28,7 @@ function xctest() {
     return
   fi
 
-  if [[ $3 != "--skip-tests" && $2 != "--skip-tests" ]];
+  if [ $2 != "--skip-tests" ];
   then
     if test -f "$WORK_DIR/Project.swift";
     then
