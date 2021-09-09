@@ -1,6 +1,6 @@
 # xctest
 
-Tool for delivering squad-specific code coverage report with html generation.
+A Tool for delivering squad-specific code coverage report.
 
 # Installation
 
