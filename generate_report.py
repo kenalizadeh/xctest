@@ -17,7 +17,7 @@ def main(workdir, scriptdir):
 
     squad_names = [x['name'] for x in configs['squads']]
 
-    files = flatten([generate_report_for_squad(all_files, configs, x) for x in squad_names])
+    files = flatten([process_files_for_squad(all_files, configs, x) for x in squad_names])
 
     if not files:
         print('\n\u26A0\uFE0F  Could not generate report.')
@@ -28,7 +28,7 @@ def main(workdir, scriptdir):
 def flatten(t):
     return [item for sublist in t for item in sublist]
 
-def generate_report_for_squad(all_files, configs, squad_name):
+def process_files_for_squad(all_files, configs, squad_name):
     selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
     if not selected_filenames:
         print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
@@ -62,10 +62,10 @@ def generate_report_for_squad(all_files, configs, squad_name):
 def total_coverage(files):
     covered_lines = sum([x['coveredLines'] for x in files])
     executable_lines = sum([x['executableLines'] for x in files])
-    # total_coverage = sum([x['lineCoverage'] for x in files]) / len(files)
+
     return covered_lines / executable_lines if executable_lines else 0
 
-def save_report(workdir, files):
+def generate_report_for_squad_files(files):
     df = pd.DataFrame.from_dict(files)
     df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
     df['squad_total_coverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['squad_total_coverage']], index = df.index)
@@ -74,7 +74,7 @@ def save_report(workdir, files):
 
     return df
 
-def save_report_for_undetermined_files(workdir, files):
+def generate_report_for_undetermined_files(files):
     df = pd.DataFrame.from_dict(files)
     df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
 
@@ -84,13 +84,13 @@ def save_report_for_undetermined_files(workdir, files):
     return df
 
 def save_reports(workdir, all_files, files):
-    df1 = save_report(workdir, files)
+    df1 = generate_report_for_squad_files(files)
 
     undetermined_files = [x for x in all_files if x['path'] not in [x['path'] for x in files]]
     for i in range(len(undetermined_files)):
         undetermined_files[i].pop('functions', None)
 
-    df2 = save_report_for_undetermined_files(workdir, undetermined_files)
+    df2 = generate_report_for_undetermined_files(undetermined_files)
 
     df = pd.concat([df1, df2], ignore_index=True)
     df.index = np.arange(1, len(df)+1)
