@@ -11,7 +11,7 @@ If you're using zsh, then
 
 Or if you're using bash, then
 
-`open ~/bash_profile`
+`open ~/.bash_profile`
 
 Add the following line somewhere in your shell profile (Don't forget to modify the correct path to the shell script).
 
@@ -23,7 +23,7 @@ After adding xctest.sh source to your shell profile and reload by running follow
 
 or
 
-`. ~/bash_profile`
+`. ~/.bash_profile`
 
 And now you're ready to go.
 
