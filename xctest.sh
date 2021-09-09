@@ -11,7 +11,7 @@ function xctest() {
 
   mdfind -name "generate_report.py" | while read DIR; do
       DIRNAME=$(dirname "$DIR")
-      if [[ -f "$DIRNAME/requirements.txt" ]] && [[ -f "$DIRNAME/xctest.sh" ]] && [[ -f "$DIRNAME/configs.json" ]];
+      if [[ -f "$DIRNAME/requirements.txt" ]] && [[ -f "$DIRNAME/xctest.sh" ]] && [[ -f "$DIRNAME/squads.csv" ]];
       then
           SCRIPT_DIR=$DIRNAME
       fi

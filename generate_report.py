@@ -15,9 +15,8 @@ def main(workdir, scriptdir):
     report_data = open('{dir}/../DerivedData/raw_report.json'.format(dir=workdir),'r')
     report = json.loads(report_data.read())
 
-    # Open and load config file
-    configs_data = open('{dir}/configs.json'.format(dir=scriptdir))
-    configs = json.loads(configs_data.read())
+    # Squad config file
+    configs = load_squad_configs(scriptdir)
 
     # Flatten all files, remove workdir from path, remove functions
     all_files = flatten([x['files'] for x in report['targets']])
@@ -26,7 +25,7 @@ def main(workdir, scriptdir):
         all_files[i].pop('functions', None)
 
     # Squad names listed in config file
-    squad_names = [x['name'] for x in configs['squads']]
+    squad_names = [x['name'] for x in configs]
 
     # Flat list of all squad files
     files = flatten([process_files_for_squad(all_files, configs, x) for x in squad_names])
@@ -42,9 +41,34 @@ def main(workdir, scriptdir):
 def flatten(t):
     return [item for sublist in t for item in sublist]
 
+def load_squad_configs(scriptdir):
+    # Load dataframe
+    df = pd.read_csv('{dir}/squads.csv'.format(dir=scriptdir))
+
+    # Group by squad
+    df = df.groupby("Squad")
+
+    # Merge filenames by group
+    df = df["Filename"].apply(list)
+
+    # Reset index after modifications
+    df = df.reset_index()
+
+    # Rename columns
+    df.columns = ['name', 'filenames']
+
+    # Export dataframe to json
+    configs = df.to_json(orient='records', indent=4)
+
+    # This part is important.
+    # We have to parse json string once more because pandas.DataFrame.to_json adds unnecessary escaping backlashes to path field values.
+    configs = json.loads(configs)
+
+    return configs
+
 def process_files_for_squad(all_files, configs, squad_name):
     # Filenames for specified squad
-    selected_filenames = flatten([x['filenames'] for x in configs['squads'] if x['name'] == squad_name])
+    selected_filenames = flatten([x['filenames'] for x in configs if x['name'] == squad_name])
 
     # Check if filenames are not empty in config file
     if not selected_filenames:
