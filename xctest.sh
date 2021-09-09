@@ -75,6 +75,6 @@ function xctest() {
 
   # Install python requirements
   pip3 install -r requirements.txt --quiet
-  # Render html from template
+  # Generate visual report
   python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR
 }
