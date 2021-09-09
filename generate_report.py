@@ -12,15 +12,15 @@ def main(workdir, scriptdir):
     workdir = os.path.normpath(workdir)
 
     # Open and load raw report json file
-    data = open('{dir}/../DerivedData/raw_report.json'.format(dir=workdir),'r')
-    json_data = json.loads(data.read())
+    report_data = open('{dir}/../DerivedData/raw_report.json'.format(dir=workdir),'r')
+    report = json.loads(report_data.read())
 
     # Open and load config file
-    config_data = open('{dir}/config.json'.format(dir=scriptdir))
-    configs = json.loads(config_data.read())
+    configs_data = open('{dir}/configs.json'.format(dir=scriptdir))
+    configs = json.loads(configs_data.read())
 
     # Flatten all files, remove workdir from path, remove functions
-    all_files = flatten([x['files'] for x in json_data['targets']])
+    all_files = flatten([x['files'] for x in report['targets']])
     for i in range(len(all_files)):
         all_files[i]['path'] = all_files[i]['path'].replace(workdir, '')
         all_files[i].pop('functions', None)
@@ -62,7 +62,7 @@ def process_files_for_squad(all_files, configs, squad_name):
             files.append(file)
 
         # Stop iterating if files matching squad filenames are all found
-        if len(files) >= len(selected_filenames) / 2:
+        if len(files) == len(selected_filenames):
             break
 
     print('\n======================================================================')
