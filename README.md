@@ -41,4 +41,4 @@ Will skip tests and generate coverage report for all squads.
 
 # Screenshots
 
-![alt text](https://github.com/kenalizadeh/xctest/blob/master/screenshot.png)
+![alt text](https://github.com/kenalizadeh/xctest/blob/master/screen.png)
