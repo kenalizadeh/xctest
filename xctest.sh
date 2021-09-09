@@ -30,8 +30,10 @@ function xctest() {
 
   WORKSPACE_FILE_NAME=$(basename $WORKSPACE_FILE)
 
-  if [ $2 != "--skip-tests" ];
+  if [[ ! -z "$2" && $2 == "--skip-tests" ]];
   then
+    echo "- Skipped tests for $WORKSPACE_FILE_NAME..."
+  else
     if test -f "$WORK_DIR/Project.swift";
     then
       echo "Generating project file with Tuist"
@@ -57,7 +59,7 @@ function xctest() {
     -destination platform="iOS Simulator,name=iPhone 11 Pro" \
     -derivedDataPath "$WORK_DIR/../DerivedData" \
     -enableCodeCoverage YES \
-    test | xcpretty --test -s --color
+    test | xcpretty --test -s --color -r html --output "$WORK_DIR/../DerivedData"
 
     if [[ $? == 0 ]]; then
       echo "✅ Unit Tests Passed. Good job!"
@@ -69,8 +71,6 @@ function xctest() {
       echo "🔴 Unit Tests Failed. Check the log output for more information"
       return 1 2>/dev/null
     fi
-  else
-    echo "- Skipped tests for $WORKSPACE_FILE_NAME..."
   fi
 
   # Install python requirements
