@@ -9,11 +9,6 @@ function xctest() {
       return
   fi
 
-  SQUAD_NAME='ALL'
-  if ! [ -z "$2" ]; then
-    SQUAD_NAME="$2"
-  fi
-
   mdfind -name "generate_report.py" | while read DIR; do
       DIRNAME=$(dirname "$DIR")
       if [[ -f "$DIRNAME/requirements.txt" ]] && [[ -f "$DIRNAME/xctest.sh" ]] && [[ -f "$DIRNAME/config.json" ]];
@@ -79,5 +74,5 @@ function xctest() {
   # Install python requirements
   pip3 install -r requirements.txt
   # Render html from template
-  python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR $SQUAD_NAME
+  python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR
 }
