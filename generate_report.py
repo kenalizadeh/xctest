@@ -55,7 +55,7 @@ def generate_report_for_squad(all_files, configs, squad_name):
     for i in range(len(files)):
         files[i]['squad_total_coverage'] = squad_total_coverage
 
-    print('\n\033[1mTOTAL COVERAGE: {:.2%}\033[0m'.format(squad_total_coverage))
+    print('\n\033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(squad_name, squad_total_coverage))
 
     return files
 
