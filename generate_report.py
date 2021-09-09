@@ -54,17 +54,16 @@ def process_files_for_squad(all_files, configs, squad_name):
     # Populate squad files
     files = []
     for file in all_files:
-        # Stop iterating if files matching squad filenames are all found
-        if len(files) == len(selected_filenames):
-            print("THE CYCLE ENDS HERE")
-            break
-
         # Check if any squad filename matches the file path
         if any([x in file['path'] for x in selected_filenames]):
             # Populate squad field
             file['squad'] = squad_name
             # Add file
             files.append(file)
+
+        # Stop iterating if files matching squad filenames are all found
+        if len(files) >= len(selected_filenames) / 2:
+            break
 
     print('\n======================================================================')
 
