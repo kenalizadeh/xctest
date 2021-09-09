@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import os.path
 import sys
 import json
 import pandas as pd
@@ -7,6 +8,8 @@ import numpy as np
 sys.dont_write_bytecode = True
 
 def main(workdir, scriptdir):
+    workdir = os.path.normpath(workdir)
+
     data = open('{dir}/../DerivedData/raw_report.json'.format(dir=workdir),'r')
     json_data = json.loads(data.read())
 
@@ -14,6 +17,9 @@ def main(workdir, scriptdir):
     configs = json.loads(config_data.read())
 
     all_files = flatten([x['files'] for x in json_data['targets']])
+    for i in range(len(all_files)):
+        all_files[i]['path'] = all_files[i]['path'].replace(workdir, '')
+        all_files[i].pop('functions', None)
 
     squad_names = [x['name'] for x in configs['squads']]
 
@@ -38,12 +44,13 @@ def process_files_for_squad(all_files, configs, squad_name):
     for file in all_files:
         if any([x in file['path'] for x in selected_filenames]):
             file['squad'] = squad_name
-            file.pop('functions', None)
             files.append(file)
 
     filenames = [x for x in selected_filenames if any([x in file['path'] for file in files])]
 
-    print('\n\u2705 DONE! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(selected_filenames), squad_name))
+    print('\n======================================================================')
+
+    print('\n\u2705 Done! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(selected_filenames), squad_name))
 
     missing_files = list(set(selected_filenames) - set(filenames))
     if missing_files:
@@ -55,7 +62,9 @@ def process_files_for_squad(all_files, configs, squad_name):
     for i in range(len(files)):
         files[i]['squad_total_coverage'] = squad_total_coverage
 
-    print('\n\033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(squad_name, squad_total_coverage))
+    print('\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(squad_name, squad_total_coverage))
+
+    print('\n======================================================================')
 
     return files
 
@@ -87,20 +96,20 @@ def save_reports(workdir, all_files, files):
     df1 = generate_report_for_squad_files(files)
 
     undetermined_files = [x for x in all_files if x['path'] not in [x['path'] for x in files]]
-    for i in range(len(undetermined_files)):
-        undetermined_files[i].pop('functions', None)
 
     df2 = generate_report_for_undetermined_files(undetermined_files)
 
     df = pd.concat([df1, df2], ignore_index=True)
     df.index = np.arange(1, len(df)+1)
 
-    df.to_csv("{dir}/../CoverageReport/report.csv".format(dir=workdir), na_rep='N/A')
-    df.to_html("{dir}/../CoverageReport/report.html".format(dir=workdir), na_rep='N/A')
+    report_path = os.path.normpath('{dir}/../CoverageReport/'.format(dir=workdir))
+
+    df.to_csv("{dir}/report.csv".format(dir=report_path), na_rep='N/A')
+    df.to_html("{dir}/report.html".format(dir=report_path), na_rep='N/A')
 
     print("\n\u2139\uFE0F  Enter following command to view coverage report.")
-    print('>  open {dir}/../CoverageReport/report.csv'.format(dir=workdir))
-    print('>  open {dir}/../CoverageReport/report.html\n'.format(dir=workdir))
+    print('>  open {dir}/report.csv'.format(dir=report_path))
+    print('>  open {dir}/report.html\n'.format(dir=report_path))
 
     return df
 
