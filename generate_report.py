@@ -11,8 +11,15 @@ def main(workdir, scriptdir):
     # Normalize workdir
     workdir = os.path.normpath(workdir)
 
+    raw_report_path = '{dir}/../DerivedData/raw_report.json'.format(dir=workdir)
+
+    # Check if raw report file exists
+    if not os.path.exists(raw_report_path):
+        print('\n\u26A0\uFE0F  Report file is missing. Please run the tests again.\n')
+        return
+
     # Open and load raw report json file
-    report_data = open('{dir}/../DerivedData/raw_report.json'.format(dir=workdir),'r')
+    report_data = open(raw_report_path,'r')
     report = json.loads(report_data.read())
 
     # Squad config file
