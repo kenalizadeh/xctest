@@ -34,14 +34,13 @@ And now you're ready to go.
 
 # Usage
 
-You have to provide project root directory as first argument.
-
+You have to provide project root directory as first argument.<br />
 Use `--skip-tests` flag if you want to generate coverage report without running the tests again.
 
-`xctest ~/Workspace/IBAMobileBank`
+`xctest ~/Workspace/IBAMobileBank`<br />
 Will run tests and generate coverage report for all squads.
 
-`xctest ~/Workspace/IBAMobileBank --skip-tests`
+`xctest ~/Workspace/IBAMobileBank --skip-tests`<br />
 Will skip tests and generate coverage report for all squads.
 
 # Screenshots
