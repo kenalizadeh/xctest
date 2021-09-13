@@ -74,7 +74,7 @@ function xctest() {
   fi
 
   # Install python requirements
-  pip3 install -r requirements.txt --quiet
+  pip3 install -r $DIRNAME/requirements.txt --quiet
   # Generate visual report
   python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR
 }
