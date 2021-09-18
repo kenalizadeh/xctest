@@ -1609,10 +1609,10 @@
 1608;LBS;/IBAMobileBank/Story/LoanSquad/Partners/Azercell/SubscriptionConfirmation/Entity/AzercellSubscriptionOffer.swift
 1609;CAR;/IBAMobileBank/Story/LoanSquad/CardProducts/Controller/CardProductsListViewController.swift
 1610;CAR;/IBAMobileBank/Story/LoanSquad/CardOrder/CardOrderOTP/CardOrderOTPBuilder.swift
-1611;N/A;/IBAMobileBank/Service/APM/ExecutionTracesService.swift
-1612;N/A;/Derived/Sources/Bundle+IBAMobileBank.swift
-1613;N/A;/IBAMobileBank/Story/LoanSquad/CardProducts/Controller/CardProductsVC.swift
-1614;N/A;/IBAMobileBank/Helper/UIView+IB.swift
+1611;ALL;/IBAMobileBank/Service/APM/ExecutionTracesService.swift
+1612;ALL;/Derived/Sources/Bundle+IBAMobileBank.swift
+1613;ALL;/IBAMobileBank/Story/LoanSquad/CardProducts/Controller/CardProductsVC.swift
+1614;ALL;/IBAMobileBank/Helper/UIView+IB.swift
 1615;CFS;/IBAMobileBank/OpenSources/Security/Jailbreak/KBCryptString.m
 1616;CFS;/IBAMobileBank/AppDelegate/AppDelegate+NetworkModule.swift
 1617;CAR;/IBAMobileBank/Story/LoanSquad/CardPayment/CardPaymentSDK.swift
@@ -1631,9 +1631,9 @@
 1630;CFS;/IBAMobileBank/Helper/KeyboardHandling/KeyboardLayoutGuide.swift
 1631;CFS;/IBAMobileBank/Story/MobileBankingSquad/Others/View/CurrencyHeader.swift
 1632;PS;/IBAMobileBank/Story/DailyBankingSquad/Payment/PaymentVerify/Controller/SelectViewController.swift
-1633;N/A;/IBAMobileBank/Story/LoanSquad/TAMCard/Model/TamCardSchedule+Ext.swift
+1633;ALL;/IBAMobileBank/Story/LoanSquad/TAMCard/Model/TamCardSchedule+Ext.swift
 1634;CFS;/IBAMobileBank/Story/DailyBankingSquad/Payment/PaymentResult/View/ImageCell/ImageCell.swift
-1635;N/A;/IBAMobileBank/Story/LoanSquad/Partners/Tamcard/View/TamCardPartnerCell.swift
+1635;ALL;/IBAMobileBank/Story/LoanSquad/Partners/Tamcard/View/TamCardPartnerCell.swift
 1636;TS;/IBAMobileBank/Story/DailyBankingSquad/CashByCode/ViewModel/CashByCodeViewModel.swift
 1637;CAR;/IBAMobileBank/Story/LoanSquad/AzercellCheckingNumber/Model/AzercellCheck.swift
 1638;CFS;/IBAMobileBank/Helper/TableViewDataSource.swift
