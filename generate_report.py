@@ -150,10 +150,12 @@ def dataframe_for_squad_files(files):
 
 def dataframe_for_undetermined_files(files):
     # Load dataframe
-    df = pd.DataFrame.from_dict(files)
-    
+    df = pd.DataFrame.from_dict(files, orient='index', columns=['coveredLines', 'lineCoverage', 'path', 'name', 'executableLines'])
+
+    df['lineCoverage'].fillna(0, inplace=True)
+
     # Format Line Coverage column as percentage
-    df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
+    df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], dtype='float64', index = df.index)
 
     # Set column titles
     df.columns = ["Lines Covered", "Line Coverage", "File path", "File name", "Executable Lines"]
