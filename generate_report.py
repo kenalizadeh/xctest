@@ -139,6 +139,7 @@ def dataframe_from_files(files):
     # Load dataframe
     df = pd.DataFrame.from_dict(files)
 
+    # Replace null values in column with 0
     df['lineCoverage'].fillna(0, inplace=True)
 
     # Format Line Coverage column as percentage
