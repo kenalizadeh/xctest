@@ -135,16 +135,17 @@ def dataframe_for_squad_files(files):
     df = pd.DataFrame.from_dict(files)
 
     # Format Line Coverage column as percentage
-    df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
+    if 'lineCoverage' in df:
+        df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
 
-    # Format Squad Coverage column as percentage
-    df['squad_total_coverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['squad_total_coverage']], index = df.index)
+        # Format Squad Coverage column as percentage
+        df['squad_total_coverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['squad_total_coverage']], index = df.index)
 
-    # Set column titles
-    df.columns = ["Lines Covered", "Line Coverage", "File path", "File name", "Executable Lines", "Squad", "Squad Coverage"]
+        # Set column titles
+        df.columns = ["Lines Covered", "Line Coverage", "File path", "File name", "Executable Lines", "Squad", "Squad Coverage"]
 
-    # Rearrange columns
-    df = df[["Squad", "Squad Coverage", "File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
+        # Rearrange columns
+        df = df[["Squad", "Squad Coverage", "File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
 
     return df
 
@@ -153,13 +154,14 @@ def dataframe_for_undetermined_files(files):
     df = pd.DataFrame.from_dict(files)
     
     # Format Line Coverage column as percentage
-    df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
+    if 'lineCoverage' in df:
+        df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
 
-    # Set column titles
-    df.columns = ["Lines Covered", "Line Coverage", "File path", "File name", "Executable Lines"]
+        # Set column titles
+        df.columns = ["Lines Covered", "Line Coverage", "File path", "File name", "Executable Lines"]
 
-    # Rearrange columns
-    df = df[["File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
+        # Rearrange columns
+        df = df[["File name", "Line Coverage", "Lines Covered", "Executable Lines", "File path"]]
 
     return df
 
