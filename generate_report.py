@@ -135,10 +135,7 @@ def total_coverage(files):
 
     return covered_lines / executable_lines if executable_lines else 0
 
-def dataframe_for_squad_files(files):
-    if not files:
-        return pd.DataFrame([])
-
+def dataframe_from_files(files):
     # Load dataframe
     df = pd.DataFrame.from_dict(files)
 
@@ -146,6 +143,14 @@ def dataframe_for_squad_files(files):
 
     # Format Line Coverage column as percentage
     df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
+
+    return df
+
+def dataframe_for_squad_files(files):
+    if not files:
+        return pd.DataFrame([])
+
+    df = dataframe_from_files(files)
 
     # Format Squad Coverage column as percentage
     df['squad_total_coverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['squad_total_coverage']], index = df.index)
@@ -162,13 +167,7 @@ def dataframe_for_undetermined_files(files):
     if not files:
         return pd.DataFrame([])
 
-    # Load dataframe
-    df = pd.DataFrame.from_dict(files)
-
-    df['lineCoverage'].fillna(0, inplace=True)
-
-    # Format Line Coverage column as percentage
-    df['lineCoverage'] = pd.Series(["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index = df.index)
+    df = dataframe_from_files(files)
 
     # Set column titles
     df.columns = ["Lines Covered", "Line Coverage", "File path", "File name", "Executable Lines"]
