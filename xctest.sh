@@ -73,8 +73,10 @@ function xctest() {
     fi
   fi
 
+  # Python virtual environment
+  python3 -m venv $SCRIPT_DIR/venv
   # Install python requirements
-  pip3 install -r $SCRIPT_DIR/requirements.txt --quiet
+  $SCRIPT_DIR/venv/bin/pip3 install -r $SCRIPT_DIR/requirements.txt
   # Generate visual report
-  python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR
+  $SCRIPT_DIR/venv/bin/python3 "$SCRIPT_DIR/generate_report.py" $WORK_DIR $SCRIPT_DIR
 }

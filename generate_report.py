@@ -9,7 +9,7 @@ sys.dont_write_bytecode = True
 
 def main(workdir, scriptdir):
     # Normalize workdir
-    workdir = os.path.normpath(workdir)
+    workdir = os.path.abspath(workdir)
 
     raw_report_path = '{dir}/../DerivedData/raw_report.json'.format(dir=workdir)
 
@@ -28,7 +28,7 @@ def main(workdir, scriptdir):
     # Flatten all files, remove workdir from path, remove functions
     all_files = flatten([x['files'] for x in report['targets']])
     for i in range(len(all_files)):
-        all_files[i]['path'] = all_files[i]['path'].replace(workdir, '')
+        all_files[i]['path'] = all_files[i]['path'].replace(workdir + '/', '')
         all_files[i].pop('functions', None)
 
     # Squad names listed in config file
@@ -50,13 +50,13 @@ def flatten(t):
 
 def load_squad_configs(scriptdir):
     # Load dataframe
-    df = pd.read_csv('{dir}/squads.csv'.format(dir=scriptdir))
+    df = pd.read_csv('{dir}/squads.csv'.format(dir=scriptdir), sep=";")
 
     # Group by squad
-    df = df.groupby("Squad")
+    df = df.groupby('Squad')
 
     # Merge filenames by group
-    df = df["Filename"].apply(list)
+    df = df['Filename'].apply(list)
 
     # Reset index after modifications
     df = df.reset_index()
@@ -75,10 +75,10 @@ def load_squad_configs(scriptdir):
 
 def process_files_for_squad(all_files, configs, squad_name):
     # Filenames for specified squad
-    selected_filenames = flatten([x['filenames'] for x in configs if x['name'] == squad_name])
+    squad_filenames = flatten([x['filenames'] for x in configs if x['name'] == squad_name])
 
     # Check if filenames are not empty in config file
-    if not selected_filenames:
+    if not squad_filenames:
         print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
         return []
 
@@ -86,25 +86,25 @@ def process_files_for_squad(all_files, configs, squad_name):
     files = []
     for file in all_files:
         # Check if any squad filename matches the file path
-        if any([x in file['path'] for x in selected_filenames]):
+        if any([x in file['path'] for x in squad_filenames]):
             # Populate squad field
             file['squad'] = squad_name
             # Add file
             files.append(file)
 
         # Stop iterating if files matching squad filenames are all found
-        if len(files) == len(selected_filenames):
+        if len(files) == len(squad_filenames):
             break
 
     print('\n======================================================================')
 
-    print('\n\u2705 Done! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(selected_filenames), squad_name))
+    print('\n\u2705 Done! Coverage report generated from {} out of {} files for {}.\n'.format(len(files), len(squad_filenames), squad_name))
 
     # Filenames from processed squad files
-    filenames = [x for x in selected_filenames if any([x in file['path'] for file in files])]
+    filenames = [x for x in squad_filenames if any([x in file['path'] for file in files])]
 
     # Make a list of squad files missing from the list of all files
-    missing_files = list(set(selected_filenames) - set(filenames))
+    missing_files = list(set(squad_filenames) - set(filenames))
 
     # Report missing files
     if missing_files:
