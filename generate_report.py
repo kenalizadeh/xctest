@@ -203,8 +203,9 @@ def save_report(workdir, all_files, files):
     # Export as html
     df.to_html("{dir}/report.html".format(dir=report_path), na_rep='N/A')
 
-    print("\n\u2139\uFE0F  Enter following command to view coverage report.")
-    print('>  open {dir}/report.csv'.format(dir=report_path))
+    print("\n\u2139\uFE0F  Enter following command to view coverage report in CSV format.")
+    print('>  open {dir}/report.csv\n'.format(dir=report_path))
+    print("\n\u2139\uFE0F  Enter following command to view coverage report in HTML format.")
     print('>  open {dir}/report.html\n'.format(dir=report_path))
 
     return df
