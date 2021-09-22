@@ -1,9 +1,11 @@
 #!/usr/bin/python
+import argparse
 import os.path
 import sys
 import json
 import pandas as pd
 import numpy as np
+import shutil
 
 sys.dont_write_bytecode = True
 
@@ -210,5 +212,38 @@ def save_report(workdir, all_files, files):
 
     return df
 
+def setup():
+    try:
+        shutil.rmtree(os.path.normpath("{workdir}/../DerivedData".format(workdir=workdir)))
+        shutil.rmtree(os.path.normpath("{workdir}/../CoverageReport".format(workdir=workdir)))
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
+
+    workspace_file = "{workdir}/IBAMobileBank.xcworkspace"
+    derived_path = "{workdir}/../DerivedData".format(workdir)
+    xcpretty_output = os.path.normpath("{workdir}/../DerivedData/xcpretty/tests.html".format(workdir))
+
+    print("- Running tests for {workspace_file}...".format(workspace_file=workspace_file))
+
+    os.system('set -o pipefail && xcodebuild \
+                -workspace {workspace_file} \
+                -scheme IBAMobileBank-Production \
+                -sdk iphonesimulator \
+                -destination platform="iOS Simulator,name=iPhone 11 Pro" \
+                -derivedDataPath {derived_path} \
+                -enableCodeCoverage YES \
+                test | xcpretty \
+                --test \
+                -s \
+                --color \
+                --report html \
+                --output {xcpretty_output}'.format(workspace_file=workspace_file, derived_path=derived_path, xcpretty_output=xcpretty_output))
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Squad-based coverage reporting.')
+    parser.add_argument('--sum', dest='accumulate', action='store_const',
+                        const=sum, default=max,
+                        help='sum the integers (default: find the max)')
+
+    args = parser.parse_args()
     main(workdir=sys.argv[1], scriptdir=sys.argv[2])
