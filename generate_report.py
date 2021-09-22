@@ -47,6 +47,11 @@ def main(workdir, scriptdir):
     print('\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR PROJECT: {:.2%}\033[0m'.format(report['lineCoverage']))
     print('\n======================================================================\n')
 
+    # Squad average
+    print('\n======================================================================')
+    print('\n\u2139\uFE0F  \033[1mSQUAD AVERAGE: {:.2%}\033[0m'.format(total_coverage(files)))
+    print('\n======================================================================\n')
+
     # Generate and save coverage report
     save_report(workdir, all_files, files)
 
