@@ -9,7 +9,10 @@ import shutil
 
 sys.dont_write_bytecode = True
 
-def main(workdir, scriptdir):
+def main(workdir, skip_tests, output_path):
+    # Get full path to xctest
+    scriptdir = os.path.dirname(os.path.abspath(__file__))
+
     # Normalize workdir
     workdir = os.path.abspath(workdir)
 
@@ -213,11 +216,11 @@ def save_report(workdir, all_files, files):
     return df
 
 def setup():
+    # Check --skip-tests flag
     try:
-        shutil.rmtree(os.path.normpath("{workdir}/../DerivedData".format(workdir=workdir)))
-        shutil.rmtree(os.path.normpath("{workdir}/../CoverageReport".format(workdir=workdir)))
-    except OSError as e:
-        print("Error: %s - %s." % (e.filename, e.strerror))
+        dirpaths = [os.path.normpath("{workdir}/../{dir}".format(workdir=workdir, dir=x)) for x in ('DerivedData', 'CoverageReport')]
+        for dirpath in dirpaths if dirpath.exists() and dirpath.is_dir():
+            shutil.rmtree(dirpath)
 
     workspace_file = "{workdir}/IBAMobileBank.xcworkspace"
     derived_path = "{workdir}/../DerivedData".format(workdir)
@@ -239,11 +242,21 @@ def setup():
                 --report html \
                 --output {xcpretty_output}'.format(workspace_file=workspace_file, derived_path=derived_path, xcpretty_output=xcpretty_output))
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Squad-based coverage reporting.')
-    parser.add_argument('--sum', dest='accumulate', action='store_const',
-                        const=sum, default=max,
-                        help='sum the integers (default: find the max)')
+def dir_path(string):
+    if os.path.isdir(string):
+        # check if directory contains workspace file
+        return string
+    else:
+        raise NotADirectoryError(string)
 
-    args = parser.parse_args()
-    main(workdir=sys.argv[1], scriptdir=sys.argv[2])
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Squad-based coverage reporting.')
+    parser.add_argument('-p', '--path', type=dir_path, help='Path to workspace diretory')
+    parser.add_argument('-s', '--skip-tests', dest='skip_tests', action='store_true', help='Skips tests and generates coverage report from last test results')
+    parser.add_argument('-o', '--output', dest='output_path', type=dir_path, help='Path for report output')
+
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    args = parse_arguments()
+    main(workdir=args.path, skip_tests=args.skip_tests, output_path=args.output_path)
