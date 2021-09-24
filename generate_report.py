@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import subprocess
 import argparse
 import os.path
 import sys
@@ -16,15 +17,18 @@ def main(workdir, skip_tests, output_path):
     # Normalize workdir
     workdir = os.path.abspath(workdir)
 
-    raw_report_path = '{dir}/../DerivedData/raw_report.json'.format(dir=workdir)
+    if not skip_tests:
+        run_tests(workdir)
+
+    raw_report_file = '{dir}/../DerivedData/raw_report.json'.format(dir=workdir)
 
     # Check if raw report file exists
-    if not os.path.exists(raw_report_path):
+    if not os.path.exists(raw_report_file) and not os.path.isfile(raw_report_file):
         print('\n\u26A0\uFE0F  Report file is missing. Please run the tests again.\n')
         return
 
     # Open and load raw report json file
-    report_data = open(raw_report_path,'r')
+    report_data = open(raw_report_file,'r')
     report = json.loads(report_data.read())
 
     # Squad config file
@@ -215,48 +219,65 @@ def save_report(workdir, all_files, files):
 
     return df
 
-def setup():
-    # Check --skip-tests flag
-    try:
-        dirpaths = [os.path.normpath("{workdir}/../{dir}".format(workdir=workdir, dir=x)) for x in ('DerivedData', 'CoverageReport')]
-        for dirpath in dirpaths if dirpath.exists() and dirpath.is_dir():
-            shutil.rmtree(dirpath)
+def run_tests(workdir):
+    dirpaths = [os.path.normpath("{workdir}/../{dir}".format(workdir=workdir, dir=x)) for x in ('DerivedData', 'CoverageReport')]
+    dirpaths = [x for x in dirpaths if os.path.exists(x) and os.path.isdir(x)]
+    for dirpath in dirpaths:
+        shutil.rmtree(dirpath)
 
-    workspace_file = "{workdir}/IBAMobileBank.xcworkspace"
-    derived_path = "{workdir}/../DerivedData".format(workdir)
-    xcpretty_output = os.path.normpath("{workdir}/../DerivedData/xcpretty/tests.html".format(workdir))
+    workspace_file = "{dir}/IBAMobileBank.xcworkspace".format(dir=workdir)
+    derived_path = '{dir}/../DerivedData'.format(dir=workdir)
+    xcpretty_output = os.path.normpath('{dir}/../DerivedData/xcpretty_tests.html'.format(dir=workdir))
 
-    print("- Running tests for {workspace_file}...".format(workspace_file=workspace_file))
+    print('- Running tests for ABB Mobile...')
 
-    os.system('set -o pipefail && xcodebuild \
-                -workspace {workspace_file} \
-                -scheme IBAMobileBank-Production \
-                -sdk iphonesimulator \
-                -destination platform="iOS Simulator,name=iPhone 11 Pro" \
-                -derivedDataPath {derived_path} \
-                -enableCodeCoverage YES \
-                test | xcpretty \
-                --test \
-                -s \
-                --color \
-                --report html \
-                --output {xcpretty_output}'.format(workspace_file=workspace_file, derived_path=derived_path, xcpretty_output=xcpretty_output))
+    command = 'set -o pipefail && xcodebuild \
+            -workspace {workspace_file} \
+            -scheme IBAMobileBank-Production \
+            -sdk iphonesimulator \
+            -destination platform="iOS Simulator,name=iPhone 11 Pro" \
+            -derivedDataPath {derived_path} \
+            -enableCodeCoverage YES \
+            test | xcpretty \
+            --test \
+            -s \
+            --color \
+            --report html \
+            --output {xcpretty_output}'.format(workspace_file=workspace_file, derived_path=derived_path, xcpretty_output=xcpretty_output)
+
+    result = subprocess.check_output(command, shell=True, stderr=subprocess.DEVNULL)
+
+    if result.returncode != 0:
+        log_output = ''
+        print('\n\u26A0\uFE0F  Test execution failed\nSee logs at: {}\n'.format(log_output))
+        print(result.output[:, -30])
+        sys.exit(1)
 
 def dir_path(string):
     if os.path.isdir(string):
-        # check if directory contains workspace file
         return string
     else:
         raise NotADirectoryError(string)
 
+def valid_csv_file(param):
+    base, ext = os.path.splitext(param)
+    if ext.lower() != '.csv':
+        raise argparse.ArgumentTypeError('Input file must have csv extension.')
+    return param
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Squad-based coverage reporting.')
-    parser.add_argument('-p', '--path', type=dir_path, help='Path to workspace diretory')
-    parser.add_argument('-s', '--skip-tests', dest='skip_tests', action='store_true', help='Skips tests and generates coverage report from last test results')
-    parser.add_argument('-o', '--output', dest='output_path', type=dir_path, help='Path for report output')
+    parser.add_argument('-i', '--input_file', type=valid_csv_file, required=True, help='Path to input CSV file.')
+    parser.add_argument('-p', '--path', type=dir_path, required=True, help='Path to workspace diretory.')
+    parser.add_argument('-s', '--skip-tests', dest='skip_tests', action='store_true', required=False, help='Skips tests and generates coverage report from last test results.')
+    parser.add_argument('-o', '--output', dest='output_path', type=dir_path, required=True, help='Path for report output.')
 
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main(workdir=args.path, skip_tests=args.skip_tests, output_path=args.output_path)
+    try:
+        main(workdir=args.path, skip_tests=args.skip_tests, output_path=args.output_path)
+    except KeyboardInterrupt:
+        print("\nXctest execution cancelled.")
+        sys.exit(0)
