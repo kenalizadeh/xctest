@@ -10,11 +10,15 @@ import shutil
 
 sys.dont_write_bytecode = True
 
-def main(workdir, skip_tests, output_path):
-    # Get full path to xctest
-    scriptdir = os.path.dirname(os.path.abspath(__file__))
+# Global variables
+xctest_appdata_dir = os.path.abspath('~/.xctest/')
+xctest_derived_dir = xctest_appdata_dir + 'DerivedData'
+xctest_report_dir = xctest_appdata_dir + 'CoverageReport'
+# Get full path to xctest
+scriptdir = os.path.dirname(os.path.abspath(__file__))
 
-    # Normalize workdir
+def main(workdir:str, skip_tests:bool, output_path:str):
+    # Absolute path to workdir
     workdir = os.path.abspath(workdir)
 
     if not skip_tests:
@@ -59,10 +63,10 @@ def main(workdir, skip_tests, output_path):
     # Generate and save coverage report
     save_report(workdir, all_files, files)
 
-def flatten(t):
+def flatten(t:list):
     return [item for sublist in t for item in sublist]
 
-def load_squad_configs(scriptdir):
+def load_squad_configs(scriptdir:str):
     # Load dataframe
     df = pd.read_csv('{dir}/squads.csv'.format(dir=scriptdir), sep=";")
 
@@ -87,7 +91,7 @@ def load_squad_configs(scriptdir):
 
     return configs
 
-def process_files_for_squad(all_files, configs, squad_name):
+def process_files_for_squad(all_files:list, configs:list, squad_name:str):
     # Filenames for specified squad
     squad_filenames = flatten([x['filenames'] for x in configs if x['name'] == squad_name])
 
@@ -138,13 +142,13 @@ def process_files_for_squad(all_files, configs, squad_name):
 
     return files
 
-def total_coverage(files):
+def total_coverage(files:list):
     covered_lines = sum([x['coveredLines'] for x in files])
     executable_lines = sum([x['executableLines'] for x in files])
 
     return covered_lines / executable_lines if executable_lines else 0
 
-def dataframe_from_files(files):
+def dataframe_from_files(files:list):
     # Load dataframe
     df = pd.DataFrame.from_dict(files)
 
@@ -156,7 +160,7 @@ def dataframe_from_files(files):
 
     return df
 
-def dataframe_for_squad_files(files):
+def dataframe_for_squad_files(files:list):
     if not files:
         return pd.DataFrame([])
 
@@ -173,7 +177,7 @@ def dataframe_for_squad_files(files):
 
     return df
 
-def dataframe_for_undetermined_files(files):
+def dataframe_for_undetermined_files(files:list):
     if not files:
         return pd.DataFrame([])
 
@@ -187,7 +191,7 @@ def dataframe_for_undetermined_files(files):
 
     return df
 
-def save_report(workdir, all_files, files):
+def save_report(workdir:str, all_files:list, files:list):
     # Dataframe for squad files
     df1 = dataframe_for_squad_files(files)
 
@@ -219,7 +223,7 @@ def save_report(workdir, all_files, files):
 
     return df
 
-def run_tests(workdir):
+def run_tests(workdir:str):
     dirpaths = [os.path.normpath("{workdir}/../{dir}".format(workdir=workdir, dir=x)) for x in ('DerivedData', 'CoverageReport')]
     dirpaths = [x for x in dirpaths if os.path.exists(x) and os.path.isdir(x)]
     for dirpath in dirpaths:
@@ -228,6 +232,11 @@ def run_tests(workdir):
     workspace_file = "{dir}/IBAMobileBank.xcworkspace".format(dir=workdir)
     derived_path = '{dir}/../DerivedData'.format(dir=workdir)
     xcpretty_output = os.path.normpath('{dir}/../DerivedData/xcpretty_tests.html'.format(dir=workdir))
+
+    # Check tuist
+    if os.path.exists('{}/Project.swift'.format(workdir)):
+        print('- Generating project with Tuist...')
+        os.system('tuist generate -path {}'.format(workdir))
 
     print('- Running tests for ABB Mobile...')
 
@@ -248,16 +257,34 @@ def run_tests(workdir):
     result = subprocess.check_output(command, shell=True, stderr=subprocess.DEVNULL)
 
     if result.returncode != 0:
-        log_output = ''
-        print('\n\u26A0\uFE0F  Test execution failed\nSee logs at: {}\n'.format(log_output))
+        log_output = write_test_log_output_to_file(workdir, result.output)
         print(result.output[:, -30])
+        print('\n\n\u26A0\uFE0F  Test execution failed\nSee full log at: {}\n'.format(log_output))
         sys.exit(1)
 
-def dir_path(string):
-    if os.path.isdir(string):
-        return string
+def write_test_log_output_to_file(workdir:str, output:str):
+    output_file_path = os.path.normpath('{dir}/../DerivedData/xctest.log'.format(dir=workdir))
+    with open(output_file_path, 'w') as file:
+        file.write(output)
+    file.close()
+    return output_file_path
+
+def setup(workdir:str):
+    # Setup app data directory
+    dirPath = os.path.abspath('~/.xctest')
+    if not os.path.isdir(dirPath):
+        os.mkdir(dirPath)
+
+    # Store project_dir in global variable
+    global project_dir
+    # Get normalized absolute path from passed parameter
+    project_dir = os.path.abspath(workdir)
+
+def dir_path(param):
+    if os.path.isdir(param):
+        return param
     else:
-        raise NotADirectoryError(string)
+        raise NotADirectoryError(param)
 
 def valid_csv_file(param):
     base, ext = os.path.splitext(param)
