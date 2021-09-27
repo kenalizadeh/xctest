@@ -11,20 +11,21 @@ import shutil
 sys.dont_write_bytecode = True
 
 # Global variables
-xctest_appdata_dir = os.path.abspath('~/.xctest/')
-xctest_derived_dir = xctest_appdata_dir + 'DerivedData'
-xctest_report_dir = xctest_appdata_dir + 'CoverageReport'
-# Get full path to xctest
-scriptdir = os.path.dirname(os.path.abspath(__file__))
+xctest_appdata_dir = os.path.join(os.getenv("HOME"), ".xctest")
+xctest_logs_dir = xctest_appdata_dir + 'Logs/'
+xctest_derived_dir = xctest_appdata_dir + 'DerivedData/'
+xctest_report_dir = xctest_appdata_dir + 'CoverageReport/'
+# Last report directory
+xctest_last_report_dir = xctest_appdata_dir + 'LastReport/'
+# Project directory provided by user.
+project_dir = ''
 
-def main(workdir:str, skip_tests:bool, output_path:str):
-    # Absolute path to workdir
-    workdir = os.path.abspath(workdir)
+def main(skip_tests:bool, output_path:str):
 
     if not skip_tests:
-        run_tests(workdir)
+        run_tests(project_dir)
 
-    raw_report_file = '{dir}/../DerivedData/raw_report.json'.format(dir=workdir)
+    raw_report_file = '{dir}/raw_report.json'.format(dir=xctest_derived_dir)
 
     # Check if raw report file exists
     if not os.path.exists(raw_report_file) and not os.path.isfile(raw_report_file):
@@ -36,12 +37,12 @@ def main(workdir:str, skip_tests:bool, output_path:str):
     report = json.loads(report_data.read())
 
     # Squad config file
-    configs = load_squad_configs(scriptdir)
+    configs = load_squad_configs()
 
-    # Flatten all files, remove workdir from path, remove functions
+    # Flatten all files, remove project directory from path, remove functions
     all_files = flatten([x['files'] for x in report['targets']])
     for i in range(len(all_files)):
-        all_files[i]['path'] = all_files[i]['path'].replace(workdir + '/', '')
+        all_files[i]['path'] = all_files[i]['path'].replace(project_dir + '/', '')
         all_files[i].pop('functions', None)
 
     # Squad names listed in config file
@@ -61,12 +62,12 @@ def main(workdir:str, skip_tests:bool, output_path:str):
     print('\n======================================================================\n')
 
     # Generate and save coverage report
-    save_report(workdir, all_files, files)
+    save_report(all_files, files)
 
 def flatten(t:list):
     return [item for sublist in t for item in sublist]
 
-def load_squad_configs(scriptdir:str):
+def load_squad_configs():
     # Load dataframe
     df = pd.read_csv('{dir}/squads.csv'.format(dir=scriptdir), sep=";")
 
@@ -191,7 +192,7 @@ def dataframe_for_undetermined_files(files:list):
 
     return df
 
-def save_report(workdir:str, all_files:list, files:list):
+def save_report(all_files:list, files:list):
     # Dataframe for squad files
     df1 = dataframe_for_squad_files(files)
 
@@ -207,36 +208,37 @@ def save_report(workdir:str, all_files:list, files:list):
     # Fix indexing to start from 1
     df.index = np.arange(1, len(df)+1)
 
-    # Path for report output files
-    report_path = os.path.normpath('{dir}/../CoverageReport/'.format(dir=workdir))
-
     # Export as csv
-    df.to_csv("{dir}/report.csv".format(dir=report_path), na_rep='N/A')
+    csv_report_path = "{dir}/report.csv".format(dir=xctest_report_dir)
+    df.to_csv(csv_report_path, na_rep='N/A')
 
     # Export as html
-    df.to_html("{dir}/report.html".format(dir=report_path), na_rep='N/A')
+    html_report_path = "{dir}/report.html".format(dir=xctest_report_dir)
+    df.to_html(html_report_path, na_rep='N/A')
 
     print("\n\u2139\uFE0F  Enter following command to view coverage report in CSV format.")
-    print('>  open {dir}/report.csv\n'.format(dir=report_path))
+    print('>  open {dir}/report.csv\n'.format(dir=xctest_report_dir))
     print("\n\u2139\uFE0F  Enter following command to view coverage report in HTML format.")
-    print('>  open {dir}/report.html\n'.format(dir=report_path))
+    print('>  open {dir}/report.html\n'.format(dir=xctest_report_dir))
+
+    # Copy reports to last report directory.
+    shutil.copy2(csv_report_path, xctest_last_report_dir)
+    shutil.copy2(html_report_path, xctest_last_report_dir)
 
     return df
 
-def run_tests(workdir:str):
-    dirpaths = [os.path.normpath("{workdir}/../{dir}".format(workdir=workdir, dir=x)) for x in ('DerivedData', 'CoverageReport')]
-    dirpaths = [x for x in dirpaths if os.path.exists(x) and os.path.isdir(x)]
+def run_tests():
+    dirpaths = [x for x in [xctest_derived_dir, xctest_report_dir] if os.path.exists(x) and os.path.isdir(x)]
     for dirpath in dirpaths:
         shutil.rmtree(dirpath)
 
-    workspace_file = "{dir}/IBAMobileBank.xcworkspace".format(dir=workdir)
-    derived_path = '{dir}/../DerivedData'.format(dir=workdir)
-    xcpretty_output = os.path.normpath('{dir}/../DerivedData/xcpretty_tests.html'.format(dir=workdir))
+    workspace_file = "{dir}/IBAMobileBank.xcworkspace".format(dir=project_dir)
+    xcpretty_output = '{dir}/xcpretty_tests.html'.format(dir=xctest_logs_dir)
 
     # Check tuist
-    if os.path.exists('{}/Project.swift'.format(workdir)):
+    if os.path.exists('{}/Project.swift'.format(project_dir)):
         print('- Generating project with Tuist...')
-        os.system('tuist generate -path {}'.format(workdir))
+        os.system('tuist generate -path {}'.format(project_dir))
 
     print('- Running tests for ABB Mobile...')
 
@@ -252,28 +254,27 @@ def run_tests(workdir:str):
             -s \
             --color \
             --report html \
-            --output {xcpretty_output}'.format(workspace_file=workspace_file, derived_path=derived_path, xcpretty_output=xcpretty_output)
+            --output {xcpretty_output}'.format(workspace_file=workspace_file, derived_path=xctest_derived_dir, xcpretty_output=xcpretty_output)
 
     result = subprocess.check_output(command, shell=True, stderr=subprocess.DEVNULL)
 
     if result.returncode != 0:
-        log_output = write_test_log_output_to_file(workdir, result.output)
+        log_output = write_test_log_output_to_file(result.output)
         print(result.output[:, -30])
         print('\n\n\u26A0\uFE0F  Test execution failed\nSee full log at: {}\n'.format(log_output))
         sys.exit(1)
 
-def write_test_log_output_to_file(workdir:str, output:str):
-    output_file_path = os.path.normpath('{dir}/../DerivedData/xctest.log'.format(dir=workdir))
+def write_test_log_output_to_file(output:str):
+    output_file_path = os.path.normpath('{dir}/xctest.log'.format(dir=xctest_logs_dir))
     with open(output_file_path, 'w') as file:
         file.write(output)
     file.close()
     return output_file_path
 
-def setup(workdir:str):
+def setup_appdata(workdir:str):
     # Setup app data directory
-    dirPath = os.path.abspath('~/.xctest')
-    if not os.path.isdir(dirPath):
-        os.mkdir(dirPath)
+    if not os.path.isdir(xctest_appdata_dir):
+        os.mkdir(xctest_appdata_dir)
 
     # Store project_dir in global variable
     global project_dir
@@ -304,7 +305,8 @@ def parse_arguments():
 if __name__ == '__main__':
     args = parse_arguments()
     try:
-        main(workdir=args.path, skip_tests=args.skip_tests, output_path=args.output_path)
+        setup_appdata(workdir=args.path)
+        main(skip_tests=args.skip_tests, output_path=args.output_path)
     except KeyboardInterrupt:
         print("\nXctest execution cancelled.")
         sys.exit(0)
