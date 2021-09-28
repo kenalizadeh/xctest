@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import subprocess
 import argparse
 import os.path
@@ -22,7 +21,7 @@ project_dir = ''
 separator = "\n" + "".join(['='*70])
 
 
-def main(skip_tests: bool, output_path: str):
+def main(input_file: str, skip_tests: bool, output_path: str):
     if not skip_tests:
         run_tests(project_dir)
 
@@ -40,7 +39,7 @@ def main(skip_tests: bool, output_path: str):
     report = json.loads(report_data.read())
 
     # Squad config file
-    configs = load_squad_configs()
+    configs = load_input_file(input_file)
 
     # Flatten all files, remove project directory from path, remove functions
     all_files = flatten([x['files'] for x in report['targets']])
@@ -75,9 +74,15 @@ def flatten(t: list):
     return [item for sublist in t for item in sublist]
 
 
-def load_squad_configs():
+def load_input_file(file):
     # Load dataframe
     df = pd.read_csv('{dir}/squads.csv'.format(dir=scriptdir), sep=";")
+
+    # Validate dataframe
+    if df['Squad'].isnull() or df['Filename'].isnull():
+        print('\n\n\u26A0\uFE0F  Input file must be a valid csv file \
+              with following columns: \'Squad\', \'Filename\'')
+        sys.exit(1)
 
     # Group by squad
     df = df.groupby('Squad')
@@ -95,7 +100,7 @@ def load_squad_configs():
     configs = df.to_json(orient='records', indent=4)
 
     # This part is important.
-    # We have to parse json string once more because pandas.DataFrame.to_json 
+    # We have to parse json string once more because pandas.DataFrame.to_json
     # adds unnecessary escaping backlashes to path field values.
     configs = json.loads(configs)
 
@@ -104,13 +109,11 @@ def load_squad_configs():
 
 def process_files_for_squad(all_files: list, configs: list, squad_name: str):
     # Filenames for specified squad
-    squad_filenames = flatten([x['filenames']
-                              for x in configs if x['name'] == squad_name])
+    squad_filenames = flatten([x['filenames'] for x in configs if x['name'] == squad_name])
 
     # Check if filenames are not empty in config file
     if not squad_filenames:
-        print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(
-            squad_name))
+        print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
         return []
 
     # Populate squad files
@@ -130,7 +133,7 @@ def process_files_for_squad(all_files: list, configs: list, squad_name: str):
     print(separator)
 
     print('\n\u2705 Done! Coverage report generated from {} out of {} files for {}.\n'.format(
-        len(files), len(squad_filenames), squad_name))
+          len(files), len(squad_filenames), squad_name))
 
     # Filenames from processed squad files
     filenames = [x for x in squad_filenames if any(
@@ -152,8 +155,7 @@ def process_files_for_squad(all_files: list, configs: list, squad_name: str):
     for i in range(len(files)):
         files[i]['squad_total_coverage'] = squad_total_coverage
 
-    print('\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(
-        squad_name, squad_total_coverage))
+    print('\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(squad_name, squad_total_coverage))
 
     print(separator)
 
@@ -224,8 +226,8 @@ def save_report(all_files: list, files: list):
     df1 = dataframe_for_squad_files(files)
 
     # Undetermined files
-    undetermined_files = [x for x in all_files if x['path']
-                          not in [x['path'] for x in files]]
+    paths = [x['path'] for x in files]
+    undetermined_files = [x for x in all_files if x['path'] not in paths]
 
     # Dataframe for undetermined files
     df2 = dataframe_for_undetermined_files(undetermined_files)
@@ -244,9 +246,11 @@ def save_report(all_files: list, files: list):
     html_report_path = "{dir}/report.html".format(dir=xctest_report_dir)
     df.to_html(html_report_path, na_rep='N/A')
 
-    print("\n\u2139\uFE0F  Enter following command to view coverage report in CSV format.")
+    print('\n\u2139\uFE0F  Enter following command to view coverage report \
+          in CSV format.')
     print('>  open {dir}/report.csv\n'.format(dir=xctest_report_dir))
-    print("\n\u2139\uFE0F  Enter following command to view coverage report in HTML format.")
+    print('\n\u2139\uFE0F  Enter following command to view coverage report \
+          in HTML format.')
     print('>  open {dir}/report.html\n'.format(dir=xctest_report_dir))
 
     # Copy reports to last report directory.
@@ -257,9 +261,9 @@ def save_report(all_files: list, files: list):
 
 
 def run_tests():
-    dirpaths = [x for x in [xctest_derived_data_dir,
-                            xctest_report_dir] if os.path.exists(x) and os.path.isdir(x)]
-    for dirpath in dirpaths:
+    dirs = [xctest_derived_data_dir, xctest_report_dir]
+    valid_dirpaths = [x for x in dirs if os.path.exists(x) and os.path.isdir(x)]
+    for dirpath in valid_dirpaths:
         shutil.rmtree(dirpath)
 
     workspace_file = "{dir}/IBAMobileBank.xcworkspace".format(dir=project_dir)
@@ -277,15 +281,15 @@ def run_tests():
             -scheme IBAMobileBank-Production \
             -sdk iphonesimulator \
             -destination platform="iOS Simulator,name=iPhone 11 Pro" \
-            -derivedDataPath {derived_data_path} \
+            -derivedDataPath {dd_path} \
             -enableCodeCoverage YES \
             test | xcpretty \
             --test \
             -s \
             --color \
             --report html \
-            --output {xcpretty_output}'.format(workspace_file=workspace_file, 
-                                               derived_data_path=xctest_derived_data_dir,
+            --output {xcpretty_output}'.format(workspace_file=workspace_file,
+                                               dd_path=xctest_derived_data_dir,
                                                xcpretty_output=xcpretty_output)
 
     result = subprocess.check_output(
@@ -294,14 +298,14 @@ def run_tests():
     if result.returncode != 0:
         log_output = write_test_log_output_to_file(result.output)
         print(result.output[:, -30])
-        print('\n\n\u26A0\uFE0F  Test execution failed\nSee full log at: {}\n'.format(
-            log_output))
+        print('\n\n\u26A0\uFE0F  Test execution failed\n\
+              See full log at: {}\n'.format(log_output))
         sys.exit(1)
     else:
         command = 'xcrun xccov view \
         --report \
-        --json {derived_data_path}/Logs/Test/*.xcresult > \
-        {derived_data_path}/raw_report.json'.format(derived_data_path=xctest_derived_data_dir)
+        --json {dd_path}/Logs/Test/*.xcresult > \
+        {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir)
 
 
 def write_test_log_output_to_file(output: str):
@@ -313,7 +317,7 @@ def write_test_log_output_to_file(output: str):
     return output_file_path
 
 
-def setup_appdata(workdir: str):
+def setup(workdir: str):
     # Setup app data directory
     if not os.path.isdir(xctest_appdata_dir):
         os.mkdir(xctest_appdata_dir)
@@ -341,8 +345,8 @@ def valid_csv_file(param):
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Squad-based coverage reporting.')
-    parser.add_argument('-i', '--input_file', type=valid_csv_file,
-                        required=True, help='Path to input CSV file.')
+    parser.add_argument('-i', '--input_file', dest='input_file'
+                        type=valid_csv_file, required=True, help='Path to input CSV file.')
     parser.add_argument('-p', '--path', type=dir_path,
                         required=True, help='Path to workspace diretory.')
     parser.add_argument('-s', '--skip-tests', dest='skip_tests', action='store_true',
@@ -356,8 +360,10 @@ def parse_arguments():
 if __name__ == '__main__':
     args = parse_arguments()
     try:
-        setup_appdata(workdir=args.path)
-        main(skip_tests=args.skip_tests, output_path=args.output_path)
+        setup(workdir=args.path)
+        main(input_file=args.input_file,
+             skip_tests=args.skip_tests,
+             output_path=args.output_path)
     except KeyboardInterrupt:
         print("\nXctest execution cancelled.")
         sys.exit(0)
