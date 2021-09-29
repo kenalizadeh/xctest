@@ -18,7 +18,6 @@ xctest_report_dir = xctest_appdata_dir + 'CoverageReport/'
 xctest_last_report_dir = xctest_appdata_dir + 'LastReport/'
 # Project directory provided by user.
 project_dir = ''
-separator = "\n" + "".join(['='*70])
 
 
 def main(input_file: str, skip_tests: bool, output_path: str):
@@ -30,8 +29,12 @@ def main(input_file: str, skip_tests: bool, output_path: str):
         dir=xctest_derived_data_dir)
 
     # Check if raw report file exists
-    if not os.path.exists(raw_report_file) and not os.path.isfile(raw_report_file):
-        print('\n\u26A0\uFE0F  Report file is missing. Please run the tests again.\n')
+    if not os.path.exists(raw_report_file) and \
+       not os.path.isfile(raw_report_file):
+        print(
+            '\n\u26A0\uFE0F  Report file is missing. \
+            Please run the tests again.\n'
+        )
         return
 
     # Open and load raw report json file
@@ -45,15 +48,18 @@ def main(input_file: str, skip_tests: bool, output_path: str):
     all_files = flatten([x['files'] for x in report['targets']])
     for i in range(len(all_files)):
         all_files[i]['path'] = all_files[i]['path'].replace(
-            project_dir + '/', '')
+            project_dir + '/',
+            ''
+        )
         all_files[i].pop('functions', None)
 
     # Squad names listed in config file
     squad_names = [x['name'] for x in configs]
 
     # Flat list of all squad files
-    files = flatten([process_files_for_squad(all_files, configs, x)
-                    for x in squad_names])
+    files = flatten(
+        [process_files_for_squad(all_files, configs, x) for x in squad_names]
+    )
 
     # Check if files are empty
     if not files:
@@ -61,13 +67,19 @@ def main(input_file: str, skip_tests: bool, output_path: str):
         return
 
     # Project total coverage
-    print(separator)
-    print('\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR PROJECT: {:.2%}\033[0m'.format(
-        report['lineCoverage']))
-    print(separator)
+    print_separator()
+    print(
+        '\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR PROJECT: \
+        {:.2%}\033[0m'.format(report['lineCoverage'])
+    )
+    print_separator()
 
     # Generate and save coverage report
     save_report(all_files, files)
+
+
+def print_separator():
+    print("\n" + "".join(['='*70]))
 
 
 def flatten(t: list):
@@ -80,8 +92,10 @@ def load_input_file(file):
 
     # Validate dataframe
     if df['Squad'].isnull() or df['Filename'].isnull():
-        print('\n\n\u26A0\uFE0F  Input file must be a valid csv file \
-              with following columns: \'Squad\', \'Filename\'')
+        print(
+            '\n\n\u26A0\uFE0F  Input file must be a valid csv file \
+            with following columns: \'Squad\', \'Filename\''
+        )
         sys.exit(1)
 
     # Group by squad
@@ -109,11 +123,16 @@ def load_input_file(file):
 
 def process_files_for_squad(all_files: list, configs: list, squad_name: str):
     # Filenames for specified squad
-    squad_filenames = flatten([x['filenames'] for x in configs if x['name'] == squad_name])
+    squad_filenames = flatten(
+        [x['filenames'] for x in configs if x['name'] == squad_name]
+    )
 
     # Check if filenames are not empty in config file
     if not squad_filenames:
-        print('\n\u26A0\uFE0F  Filenames for squad {} must be provided for coverage report.'.format(squad_name))
+        print(
+            '\n\u26A0\uFE0F  Filenames for squad {} must be provided \
+            for coverage report.'.format(squad_name)
+        )
         return []
 
     # Populate squad files
@@ -130,10 +149,16 @@ def process_files_for_squad(all_files: list, configs: list, squad_name: str):
         if len(files) == len(squad_filenames):
             break
 
-    print(separator)
+    print_separator()
 
-    print('\n\u2705 Done! Coverage report generated from {} out of {} files for {}.\n'.format(
-          len(files), len(squad_filenames), squad_name))
+    print(
+        '\n\u2705 Done! Coverage report generated from {} out of \
+        {} files for {}.\n'.format(
+            len(files),
+            len(squad_filenames),
+            squad_name
+        )
+    )
 
     # Filenames from processed squad files
     filenames = [x for x in squad_filenames if any(
@@ -144,8 +169,11 @@ def process_files_for_squad(all_files: list, configs: list, squad_name: str):
 
     # Report missing files
     if missing_files:
-        print('\u26A0\uFE0F  {count} File(s) not found:'.format(
-            count=len(missing_files)))
+        print(
+            '\u26A0\uFE0F  {count} File(s) not found:'.format(
+                count=len(missing_files)
+            )
+        )
         [print(' - {}'.format(x)) for x in missing_files]
 
     # Total coverage for squad files
@@ -155,9 +183,14 @@ def process_files_for_squad(all_files: list, configs: list, squad_name: str):
     for i in range(len(files)):
         files[i]['squad_total_coverage'] = squad_total_coverage
 
-    print('\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(squad_name, squad_total_coverage))
+    print(
+        '\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(
+            squad_name,
+            squad_total_coverage
+        )
+    )
 
-    print(separator)
+    print_separator()
 
     return files
 
@@ -178,7 +211,9 @@ def dataframe_from_files(files: list):
 
     # Format Line Coverage column as percentage
     df['lineCoverage'] = pd.Series(
-        ["{0:.2f}%".format(val * 100) for val in df['lineCoverage']], index=df.index)
+        ["{0:.2f}%".format(val * 100) for val in df['lineCoverage']],
+        index=df.index
+    )
 
     return df
 
@@ -190,12 +225,14 @@ def dataframe_for_squad_files(files: list):
     df = dataframe_from_files(files)
 
     # Format Squad Coverage column as percentage
-    df['squad_total_coverage'] = pd.Series(["{0:.2f}%".format(
-        val * 100) for val in df['squad_total_coverage']], index=df.index)
+    df['squad_total_coverage'] = pd.Series(
+        ["{0:.2f}%".format(val * 100) for val in df['squad_total_coverage']],
+        index=df.index
+    )
 
     # Set column titles
-    df.columns = ["Lines Covered", "Line Coverage", "File path",
-                  "File name", "Executable Lines", "Squad", "Squad Coverage"]
+    df.columns = ["Lines Covered", "Line Coverage", "File path", "File name",
+                  "Executable Lines", "Squad", "Squad Coverage"]
 
     # Rearrange columns
     df = df[["Squad", "Squad Coverage", "File name", "Line Coverage",
@@ -211,12 +248,12 @@ def dataframe_for_undetermined_files(files: list):
     df = dataframe_from_files(files)
 
     # Set column titles
-    df.columns = ["Lines Covered", "Line Coverage",
-                  "File path", "File name", "Executable Lines"]
+    df.columns = ["Lines Covered", "Line Coverage", "File path",
+                  "File name", "Executable Lines"]
 
     # Rearrange columns
-    df = df[["File name", "Line Coverage",
-             "Lines Covered", "Executable Lines", "File path"]]
+    df = df[["File name", "Line Coverage", "Lines Covered",
+             "Executable Lines", "File path"]]
 
     return df
 
@@ -247,10 +284,10 @@ def save_report(all_files: list, files: list):
     df.to_html(html_report_path, na_rep='N/A')
 
     print('\n\u2139\uFE0F  Enter following command to view coverage report \
-          in CSV format.')
+        in CSV format.')
     print('>  open {dir}/report.csv\n'.format(dir=xctest_report_dir))
-    print('\n\u2139\uFE0F  Enter following command to view coverage report \
-          in HTML format.')
+    print('\n\u2139\uFE0F  Enter following command to view coverage report in \
+        HTML format.')
     print('>  open {dir}/report.html\n'.format(dir=xctest_report_dir))
 
     # Copy reports to last report directory.
@@ -262,7 +299,8 @@ def save_report(all_files: list, files: list):
 
 def run_tests():
     dirs = [xctest_derived_data_dir, xctest_report_dir]
-    valid_dirpaths = [x for x in dirs if os.path.exists(x) and os.path.isdir(x)]
+    valid_dirpaths = [
+        x for x in dirs if os.path.exists(x) and os.path.isdir(x)]
     for dirpath in valid_dirpaths:
         shutil.rmtree(dirpath)
 
@@ -288,9 +326,11 @@ def run_tests():
             -s \
             --color \
             --report html \
-            --output {xcpretty_output}'.format(workspace_file=workspace_file,
-                                               dd_path=xctest_derived_data_dir,
-                                               xcpretty_output=xcpretty_output)
+            --output {xcpretty_output}'.format(
+        workspace_file=workspace_file,
+        dd_path=xctest_derived_data_dir,
+        xcpretty_output=xcpretty_output
+    )
 
     result = subprocess.check_output(
         command, shell=True, stderr=subprocess.DEVNULL)
@@ -346,13 +386,17 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Squad-based coverage reporting.')
     parser.add_argument('-i', '--input_file', dest='input_file'
-                        type=valid_csv_file, required=True, help='Path to input CSV file.')
+                        type=valid_csv_file,
+                        required=True, help='Path to input CSV file.')
     parser.add_argument('-p', '--path', type=dir_path,
                         required=True, help='Path to workspace diretory.')
-    parser.add_argument('-s', '--skip-tests', dest='skip_tests', action='store_true',
-                        required=False, help='Skips tests and generates coverage report from last test results.')
+    parser.add_argument('-s', '--skip-tests', dest='skip_tests',
+                        action='store_true', required=False,
+                        help='Skips tests and generates coverage report \
+                        from last test results.')
     parser.add_argument('-o', '--output', dest='output_path',
-                        type=dir_path, required=True, help='Path for report output.')
+                        type=dir_path, required=True, help='Path for \
+                        report output.')
 
     return parser.parse_args()
 
@@ -361,9 +405,11 @@ if __name__ == '__main__':
     args = parse_arguments()
     try:
         setup(workdir=args.path)
-        main(input_file=args.input_file,
-             skip_tests=args.skip_tests,
-             output_path=args.output_path)
+        main(
+            input_file=args.input_file,
+            skip_tests=args.skip_tests,
+            output_path=args.output_path
+        )
     except KeyboardInterrupt:
         print("\nXctest execution cancelled.")
         sys.exit(0)
