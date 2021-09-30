@@ -385,15 +385,14 @@ def valid_csv_file(param):
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Squad-based coverage reporting.')
-    parser.add_argument('-i', '--input_file', dest='input_file'
+
+    parser.add_argument('-i', '--input', dest='input_file',
                         type=valid_csv_file,
                         required=True, help='Path to input CSV file.')
-    parser.add_argument('-p', '--path', type=dir_path,
+
+    parser.add_argument('-p', '--path', dest='path', type=dir_path,
                         required=True, help='Path to workspace diretory.')
-    parser.add_argument('-s', '--skip-tests', dest='skip_tests',
-                        action='store_true', required=False,
-                        help='Skips tests and generates coverage report \
-                        from last test results.')
+
     parser.add_argument('-o', '--output', dest='output_path',
                         type=dir_path, required=True, help='Path for \
                         report output.')
@@ -407,9 +406,11 @@ if __name__ == '__main__':
         setup(workdir=args.path)
         main(
             input_file=args.input_file,
-            skip_tests=args.skip_tests,
+            skip_tests=False,
             output_path=args.output_path
         )
     except KeyboardInterrupt:
         print("\nXctest execution cancelled.")
         sys.exit(0)
+
+# venv/bin/python3 generate_report.py -i squads.csv -p $ABBM_MAIN -o $ABBM_MAIN/../
