@@ -22,9 +22,8 @@ xctest_last_report_dir = xctest_appdata_dir + 'LastReport/'
 project_dir = ''
 
 
-def main(input_file: str, skip_tests: bool, output_path: str):
-    if not skip_tests:
-        run_tests(project_dir)
+def main(input_file: str):
+    run_tests()
 
     # Raw report json file
     raw_report_file = '{dir}/raw_report.json'.format(
@@ -316,38 +315,87 @@ def run_tests():
 
     print('- Running tests for ABB Mobile...')
 
-    command = 'set -o pipefail && xcodebuild \
-            -workspace {workspace_file} \
-            -scheme IBAMobileBank-Production \
-            -sdk iphonesimulator \
-            -destination platform="iOS Simulator,name=iPhone 11 Pro" \
-            -derivedDataPath {dd_path} \
-            -enableCodeCoverage YES \
-            test | xcpretty \
-            --test \
-            -s \
-            --color \
-            --report html \
-            --output {xcpretty_output}'.format(
-        workspace_file=workspace_file,
-        dd_path=xctest_derived_data_dir,
-        xcpretty_output=xcpretty_output
-    )
+    set_pipefail = subprocess.Popen([
+        'set',
+        '-o',
+        'pipefail'
+        ])
+    set_pipefail.communicate()
 
-    result = subprocess.check_output(
-        command, shell=True, stderr=subprocess.DEVNULL)
+    xcodebuild = subprocess.Popen([
+        'xcodebuild',
+        '-workspace {workspace_file} \\'.format(workspace_file=workspace_file),
+        '-scheme IBAMobileBank-Production \\',
+        '-sdk iphonesimulator \\',
+        '-destination platform="iOS Simulator,name=iPhone 11 Pro" \\',
+        '-derivedDataPath {dd_path} \\'.format(dd_path=xctest_derived_data_dir),
+        '-enableCodeCoverage YES \\',
+        '| xcpretty',
+        '--test',
+        '-s',
+        '-c',
+        '--report html',
+        '--output {xcpretty_output}'.format(xcpretty_output=xcpretty_output)
+        ])
 
-    if result.returncode != 0:
-        log_output = write_test_log_output_to_file(result.output)
-        print(result.output[:, -30])
+    streamdata = xcpretty.communicate()
+
+    if xcodebuild.returncode != 0:
+        log_output = write_test_log_output_to_file(streamdata.stdout)
+        print(streamdata.stdout[:, -30])
         print('\n\n\u26A0\uFE0F  Test execution failed\n\
               See full log at: {}\n'.format(log_output))
         sys.exit(1)
     else:
-        command = 'xcrun xccov view \
-        --report \
-        --json {dd_path}/Logs/Test/*.xcresult > \
-        {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir)
+        print('\n\u2705 Tests succeeded!.\nProcessing results...')
+
+        xccov = subprocess.Popen([
+            'xcrun xccov view \
+            --report \
+            --json {dd_path}/Logs/Test/*.xcresult > \
+            {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir)
+        ])
+
+        streamdata = xccov.communicate()
+
+        if xccov.returncod != 0:
+            print_separator()
+            print('\n\n\u26A0\uFE0F  Xccov failed:')
+            print(streamdata.stderr)
+            sys.exit(1)
+
+    # command = 'set -o pipefail && xcodebuild \
+    #         -workspace {workspace_file} \
+    #         -scheme IBAMobileBank-Production \
+    #         -sdk iphonesimulator \
+    #         -destination platform="iOS Simulator,name=iPhone 11 Pro" \
+    #         -derivedDataPath {dd_path} \
+    #         -enableCodeCoverage YES \
+    #         test | xcpretty \
+    #         --test \
+    #         -s \
+    #         --color \
+    #         --report html \
+    #         --output {xcpretty_output}'.format(
+    #     workspace_file=workspace_file,
+    #     dd_path=xctest_derived_data_dir,
+    #     xcpretty_output=xcpretty_output
+    # )
+
+    # result = subprocess.check_output(
+    #     command, shell=True, stderr=subprocess.DEVNULL)
+
+    # if result.returncode != 0:
+    #     log_output = write_test_log_output_to_file(result.output)
+    #     print(result.output[:, -30])
+    #     print('\n\n\u26A0\uFE0F  Test execution failed\n\
+    #           See full log at: {}\n'.format(log_output))
+    #     sys.exit(1)
+    # else:
+    #     command = 'xcrun xccov view \
+    #     --report \
+    #     --json {dd_path}/Logs/Test/*.xcresult > \
+    #     {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir)
 
 
 def write_test_log_output_to_file(output: str):
@@ -395,10 +443,6 @@ def parse_arguments():
     parser.add_argument('-p', '--path', dest='path', type=dir_path,
                         required=True, help='Path to workspace diretory.')
 
-    parser.add_argument('-o', '--output', dest='output_path',
-                        type=dir_path, required=True, help='Path for \
-                        report output.')
-
     return parser.parse_args()
 
 
@@ -406,13 +450,9 @@ if __name__ == '__main__':
     args = parse_arguments()
     try:
         setup(workdir=args.path)
-        main(
-            input_file=args.input_file,
-            skip_tests=False,
-            output_path=args.output_path
-        )
+        main(input_file=args.input_file)
     except KeyboardInterrupt:
         print("\nXctest execution cancelled.")
         sys.exit(0)
 
-# venv/bin/python3 generate_report.py -i squads.csv -p $ABBM_MAIN -o $ABBM_MAIN/../
+# venv/bin/python3 xctest.py -i squads.csv -p $ABBM_MAIN -o $ABBM_MAIN/../
