@@ -309,93 +309,94 @@ def run_tests():
     xcpretty_output = '{dir}/xcpretty_tests.html'.format(dir=xctest_logs_dir)
 
     # Check tuist
-    if os.path.exists('{}/Project.swift'.format(project_dir)):
-        print('- Generating project with Tuist...')
-        os.system('tuist generate -path {}'.format(project_dir))
+    # if os.path.exists('{}/Project.swift'.format(project_dir)):
+    #     print('- Generating project with Tuist...')
+    #     # tuist_generate = subprocess.Popen([
+    #     #     'tuist',
+    #     #     'generate',
+    #     #     '--path {}/Project.swift'.format(project_dir)
+    #     #     ])
+    #     tuist_generate = subprocess.Popen(
+    #         [
+    #         'tuist',
+    #         'generate'
+    #         ],
+    #         cwd=project_dir
+    #         )
+    #     tuist_generate.communicate()
 
     print('- Running tests for ABB Mobile...')
 
-    set_pipefail = subprocess.Popen([
+    pipefail = subprocess.Popen([
         'set',
         '-o',
         'pipefail'
-        ])
-    set_pipefail.communicate()
+        ],
+        shell=True
+        )
+    pipefail.communicate()
 
-    xcodebuild = subprocess.Popen([
-        'xcodebuild',
-        '-workspace {workspace_file} \\'.format(workspace_file=workspace_file),
-        '-scheme IBAMobileBank-Production \\',
-        '-sdk iphonesimulator \\',
-        '-destination platform="iOS Simulator,name=iPhone 11 Pro" \\',
-        '-derivedDataPath {dd_path} \\'.format(dd_path=xctest_derived_data_dir),
-        '-enableCodeCoverage YES \\',
-        '| xcpretty',
-        '--test',
-        '-s',
-        '-c',
-        '--report html',
-        '--output {xcpretty_output}'.format(xcpretty_output=xcpretty_output)
-        ])
+    xcodebuild = subprocess.Popen(
+        'xcodebuild \
+        test \
+        -workspace {workspace_file} \
+        -scheme IBAMobileBank-Production \
+        -sdk iphonesimulator \
+        -destination platform="iOS Simulator,name=iPhone 11 Pro" \
+        -derivedDataPath {dd_path} \
+        -enableCodeCoverage YES'.format(
+            workspace_file=workspace_file,
+            dd_path=xctest_derived_data_dir
+        ),
+        shell=True,
+        stdout=subprocess.PIPE
+        )
 
-    streamdata = xcpretty.communicate()
+    xcpretty = subprocess.Popen(
+        'xcpretty \
+        -t \
+        -s \
+        -c \
+        --report html \
+        --output {xcpretty_output}'.format(xcpretty_output=xcpretty_output),
+        shell=True,
+        stdin=xcodebuild.stdout
+        )
 
-    if xcodebuild.returncode != 0:
-        log_output = write_test_log_output_to_file(streamdata.stdout)
-        print(streamdata.stdout[:, -30])
+    xcodebuild.stdout.close()
+
+    (stdout, stderr) = xcpretty.communicate()
+
+    xcodebuild_returncode = xcodebuild.wait()
+
+    # stdout, stderr = xcodebuild.communicate()
+
+    if xcodebuild_returncode != 0:
+        log_output = write_test_log_output_to_file(stdout)
+        print(stdout[:, -30])
         print('\n\n\u26A0\uFE0F  Test execution failed\n\
               See full log at: {}\n'.format(log_output))
         sys.exit(1)
     else:
         print('\n\u2705 Tests succeeded!.\nProcessing results...')
 
-        xccov = subprocess.Popen([
+        xccov = subprocess.Popen(
             'xcrun xccov view \
             --report \
             --json {dd_path}/Logs/Test/*.xcresult > \
-            {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir)
-        ])
+            {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir),
+            shell=True
+        )
 
-        streamdata = xccov.communicate()
+        (stdout, stderr) = xccov.communicate()
 
-        if xccov.returncod != 0:
+        xccov_returncode = xccov.wait()
+
+        if xccov_returncode != 0:
             print_separator()
             print('\n\n\u26A0\uFE0F  Xccov failed:')
-            print(streamdata.stderr)
+            print(stdout)
             sys.exit(1)
-
-    # command = 'set -o pipefail && xcodebuild \
-    #         -workspace {workspace_file} \
-    #         -scheme IBAMobileBank-Production \
-    #         -sdk iphonesimulator \
-    #         -destination platform="iOS Simulator,name=iPhone 11 Pro" \
-    #         -derivedDataPath {dd_path} \
-    #         -enableCodeCoverage YES \
-    #         test | xcpretty \
-    #         --test \
-    #         -s \
-    #         --color \
-    #         --report html \
-    #         --output {xcpretty_output}'.format(
-    #     workspace_file=workspace_file,
-    #     dd_path=xctest_derived_data_dir,
-    #     xcpretty_output=xcpretty_output
-    # )
-
-    # result = subprocess.check_output(
-    #     command, shell=True, stderr=subprocess.DEVNULL)
-
-    # if result.returncode != 0:
-    #     log_output = write_test_log_output_to_file(result.output)
-    #     print(result.output[:, -30])
-    #     print('\n\n\u26A0\uFE0F  Test execution failed\n\
-    #           See full log at: {}\n'.format(log_output))
-    #     sys.exit(1)
-    # else:
-    #     command = 'xcrun xccov view \
-    #     --report \
-    #     --json {dd_path}/Logs/Test/*.xcresult > \
-    #     {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir)
 
 
 def write_test_log_output_to_file(output: str):
