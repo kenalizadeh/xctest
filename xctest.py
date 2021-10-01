@@ -308,7 +308,7 @@ def run_tests():
     workspace_file = "{dir}/IBAMobileBank.xcworkspace".format(dir=project_dir)
     xcpretty_output = '{dir}/xcpretty_tests.html'.format(dir=xctest_logs_dir)
 
-    Check tuist
+    # Check tuist
     if os.path.exists('{}/Project.swift'.format(project_dir)):
         print('- Generating project with Tuist...')
         # tuist_generate = subprocess.Popen([
