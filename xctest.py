@@ -356,7 +356,6 @@ def run_tests():
         --output {xcpretty_output}'.format(xcpretty_output=xcpretty_output),
         shell=True,
         stdin=xcodebuild.stdout
-        # stdout=subprocess.PIPE
         )
 
     xcodebuild.stdout.close()
