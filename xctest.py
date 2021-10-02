@@ -94,8 +94,8 @@ def load_input_file(file):
     # Validate dataframe
     if df['Squad'].isnull() or df['Filename'].isnull():
         print(
-            '\n\n\u26A0\uFE0F  Input file must be a valid csv file \
-            with following columns: \'Squad\', \'Filename\''
+            '\n\n\u26A0\uFE0F  \033[1mInput file must be a valid csv file \
+            with following columns: \'Squad\', \'Filename\'\033[0m'
         )
         sys.exit(1)
 
@@ -311,11 +311,6 @@ def run_tests():
     # Check tuist
     if os.path.exists('{}/Project.swift'.format(project_dir)):
         print('- Generating project with Tuist...')
-        # tuist_generate = subprocess.Popen([
-        #     'tuist',
-        #     'generate',
-        #     '--path {}/Project.swift'.format(project_dir)
-        #     ])
         tuist_generate = subprocess.Popen(
             [
             'tuist',
@@ -327,13 +322,13 @@ def run_tests():
 
     print('- Running tests for ABB Mobile...')
 
-    pipefail = subprocess.Popen([
-        'set',
-        '-o',
-        'pipefail'
-        ],
+    pipefail = subprocess.Popen(
+        'set \
+        -o \
+        pipefail',
         shell=True
         )
+
     pipefail.communicate()
 
     xcodebuild = subprocess.Popen(
@@ -361,21 +356,19 @@ def run_tests():
         --output {xcpretty_output}'.format(xcpretty_output=xcpretty_output),
         shell=True,
         stdin=xcodebuild.stdout
+        # stdout=subprocess.PIPE
         )
 
     xcodebuild.stdout.close()
 
-    (stdout, stderr) = xcpretty.communicate()
+    xcpretty.communicate()
 
     xcodebuild_returncode = xcodebuild.wait()
 
     # stdout, stderr = xcodebuild.communicate()
 
     if xcodebuild_returncode != 0:
-        log_output = write_test_log_output_to_file(stdout)
-        print(stdout[:, -30])
-        print('\n\n\u26A0\uFE0F  Test execution failed\n\
-              See full log at: {}\n'.format(log_output))
+        print('\n\n\u26A0\uFE0F  \033[1mTest execution failed. \nSee the logs for more detail.\033[0m')
         sys.exit(1)
     else:
         print('\n\u2705 Tests succeeded!.\nProcessing results...')
@@ -394,18 +387,9 @@ def run_tests():
 
         if xccov_returncode != 0:
             print_separator()
-            print('\n\n\u26A0\uFE0F  Xccov failed:')
+            print('\n\n\u26A0\uFE0F  \033[1mXccov failed:\033[0m')
             print(stdout)
             sys.exit(1)
-
-
-def write_test_log_output_to_file(output: str):
-    output_file_path = os.path.normpath(
-        '{dir}/xctest.log'.format(dir=xctest_logs_dir))
-    with open(output_file_path, 'w') as file:
-        file.write(output)
-    file.close()
-    return output_file_path
 
 
 def setup(workdir: str):
@@ -453,7 +437,5 @@ if __name__ == '__main__':
         setup(workdir=args.path)
         main(input_file=args.input_file)
     except KeyboardInterrupt:
-        print("\nXctest execution cancelled.")
+        print("\n\033[1mXctest execution cancelled.\033[0m")
         sys.exit(0)
-
-# venv/bin/python3 xctest.py -i squads.csv -p $ABBM_MAIN -o $ABBM_MAIN/../
