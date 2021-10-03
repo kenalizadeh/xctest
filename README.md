@@ -4,10 +4,10 @@ A Tool for delivering squad-specific code coverage report.
 
 # Installation
 
-Add `<path-to-project>/packaged/xctest/` directory to your `PATH`.
+1. Execute `setup.sh` script.
+2. Add `<path-to-project>/packaged/xctest/` directory to your `PATH`.
 
 **And now you're ready to go.**</br>
-**Enjoy.**
 
 # Usage
 
