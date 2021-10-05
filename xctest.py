@@ -8,6 +8,7 @@ import json
 import pandas as pd
 import numpy as np
 import shutil
+from pathlib import Path
 
 sys.dont_write_bytecode = True
 
@@ -20,8 +21,6 @@ xctest_logs_dir = os.path.join(xctest_appdata_dir, 'logs')
 xctest_derived_data_dir = os.path.join(xctest_appdata_dir, 'DerivedData')
 # Coverage report directory
 xctest_report_dir = os.path.join(xctest_appdata_dir, 'CoverageReport')
-# Last report directory
-xctest_last_report_dir = os.path.join(xctest_appdata_dir, 'LastReport')
 # Project directory provided by user.
 project_dir = ''
 
@@ -299,10 +298,6 @@ def save_report(all_files: list, files: list):
         HTML format.')
     print('>  open {dir}/report.html\n'.format(dir=xctest_report_dir))
 
-    # Copy reports to last report directory.
-    shutil.copy2(csv_report_path, xctest_last_report_dir)
-    shutil.copy2(html_report_path, xctest_last_report_dir)
-
     return df
 
 
@@ -405,14 +400,12 @@ def run_tests():
 
 
 def setup(workdir: str):
-    # Setup app data directory
-    if not os.path.isdir(xctest_appdata_dir):
-        # Appdata root directory
-        os.mkdir(xctest_appdata_dir)
-        # Logs directory
-        os.mkdir(xctest_logs_dir)
-        # CoverageReport directory
-        os.mkdir(xctest_report_dir)
+    # Appdata root directory
+    Path(xctest_appdata_dir).mkdir(parents=True, exist_ok=True)
+    # Logs directory
+    Path(xctest_logs_dir).mkdir(parents=True, exist_ok=True)
+    # CoverageReport directory
+    Path(xctest_report_dir).mkdir(parents=True, exist_ok=True)
 
     # Store project_dir in global variable
     global project_dir
