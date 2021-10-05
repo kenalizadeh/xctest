@@ -25,11 +25,12 @@ xctest_report_dir = os.path.join(xctest_appdata_dir, 'CoverageReport')
 project_dir = ''
 
 
-def main(input_file: str):
+def main(input_file: str, skip_tests: bool):
     # Validate and load squads file
     squads_data = load_squads_file(input_file)
 
-    run_tests()
+    if not skip_tests:
+        run_tests()
 
     # Raw report json file
     raw_report_file = os.path.join(xctest_derived_data_dir, 'raw_report.json')
@@ -291,14 +292,16 @@ def save_report(all_files: list, files: list):
     html_report_path = os.path.join(xctest_report_dir, 'report.html')
     df.to_html(html_report_path, na_rep='N/A')
 
-    print('\n\u2139\uFE0F  Enter following command to view coverage report \
-        in CSV format.')
-    print('>  open {dir}/report.csv\n'.format(dir=xctest_report_dir))
-    print('\n\u2139\uFE0F  Enter following command to view coverage report in \
-        HTML format.')
-    print('>  open {dir}/report.html\n'.format(dir=xctest_report_dir))
+    print_report()
 
     return df
+
+
+def print_report():
+    print('\n\u2139\uFE0F  Enter following command to view coverage report in CSV format.')
+    print('>  open {dir}/report.csv\n'.format(dir=xctest_report_dir))
+    print('\n\u2139\uFE0F  Enter following command to view coverage report in HTML format.')
+    print('>  open {dir}/report.html\n'.format(dir=xctest_report_dir))
 
 
 def run_tests():
@@ -439,21 +442,33 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Squad-based coverage reporting.')
 
-    parser.add_argument('-i', '--input', dest='input_file',
+    subparser = parser.add_subparsers(dest='command')
+
+    generate = subparser.add_parser('generate', help='Generate squad based coverage report from test execution results.')
+    show_last = subparser.add_parser('showreport', help='Show last report files.')
+
+    generate.add_argument('-i', '--input', dest='input_file',
                         type=valid_csv_file,
                         required=True, help='Path to input CSV file.')
 
-    parser.add_argument('-p', '--path', dest='path', type=dir_path,
+    generate.add_argument('-p', '--path', dest='path', type=dir_path,
                         required=True, help='Path to workspace diretory.')
+
+    generate.add_argument('-s', '--skip-tests', dest='skip_tests', action='store_true',
+                        required=False, help='Skip executing tests and generate report from last test execution results.')
 
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_arguments()
+
     try:
-        setup(workdir=args.path)
-        main(input_file=args.input_file)
+        if args.command == 'generate':
+            setup(workdir=args.path)
+            main(input_file=args.input_file, skip_tests=args.skip_tests)
+        elif args.command == 'showreport':
+            print_report()
     except KeyboardInterrupt:
         print("\n\033[1mXctest execution cancelled.\033[0m")
         sys.exit(0)
