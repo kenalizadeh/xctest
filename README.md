@@ -17,6 +17,7 @@ Or use the script directly `venv/bin/python3 <path-to-project>/packaged/xctest/x
 <h2>generate</h2>
 
 <h3>Arguments</h3>
+
 * -i --input | **Required**<br />
 Provide an input CSV file which contains two required columns `Squad` and `Filename`.<br />
 Example `squads.csv` file is present in the repository.<br />
