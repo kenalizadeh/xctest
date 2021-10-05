@@ -21,6 +21,8 @@ xctest_logs_dir = os.path.join(xctest_appdata_dir, 'logs')
 xctest_derived_data_dir = os.path.join(xctest_appdata_dir, 'DerivedData')
 # Coverage report directory
 xctest_report_dir = os.path.join(xctest_appdata_dir, 'CoverageReport')
+# Last report directory
+xctest_last_report_dir = os.path.join(xctest_appdata_dir, 'LastReport')
 # Project directory provided by user.
 project_dir = ''
 
@@ -292,16 +294,20 @@ def save_report(all_files: list, files: list):
     html_report_path = os.path.join(xctest_report_dir, 'report.html')
     df.to_html(html_report_path, na_rep='N/A')
 
-    print_report()
+    print_report(csv_report_path, html_report_path)
+
+    # Copy reports to last report directory.
+    shutil.copy2(csv_report_path, xctest_last_report_dir)
+    shutil.copy2(html_report_path, xctest_last_report_dir)
 
     return df
 
 
-def print_report():
+def print_report(csv_report_path: str, html_report_path: str):
     print('\n\u2139\uFE0F  Enter following command to view coverage report in CSV format.')
-    print('>  open {dir}/report.csv\n'.format(dir=xctest_report_dir))
+    print('>  open {path}\n'.format(path=csv_report_path))
     print('\n\u2139\uFE0F  Enter following command to view coverage report in HTML format.')
-    print('>  open {dir}/report.html\n'.format(dir=xctest_report_dir))
+    print('>  open {path}\n'.format(path=html_report_path))
 
 
 def run_tests():
@@ -468,7 +474,10 @@ if __name__ == '__main__':
             setup(workdir=args.path)
             main(input_file=args.input_file, skip_tests=args.skip_tests)
         elif args.command == 'showreport':
-            print_report()
+            print_report(
+                os.path.join(xctest_last_report_dir, 'report.csv'),
+                os.path.join(xctest_last_report_dir, 'report.html')
+            )
     except KeyboardInterrupt:
         print("\n\033[1mXctest execution cancelled.\033[0m")
         sys.exit(0)
