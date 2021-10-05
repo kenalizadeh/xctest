@@ -386,7 +386,10 @@ def run_tests():
             'xcrun xccov view \
             --report \
             --json {dd_path}/Logs/Test/*.xcresult > \
-            {raw_report_file}'.format(raw_report_file=raw_report_file),
+            {raw_report_file}'.format(
+                dd_path=xctest_derived_data_dir,
+                raw_report_file=raw_report_file
+            ),
             shell=True
         )
 
@@ -404,7 +407,12 @@ def run_tests():
 def setup(workdir: str):
     # Setup app data directory
     if not os.path.isdir(xctest_appdata_dir):
+        # Appdata root directory
         os.mkdir(xctest_appdata_dir)
+        # Logs directory
+        os.mkdir(xctest_logs_dir)
+        # CoverageReport directory
+        os.mkdir(xctest_report_dir)
 
     # Store project_dir in global variable
     global project_dir
