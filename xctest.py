@@ -302,11 +302,15 @@ def save_report(all_files: list, files: list):
 
 
 def run_tests():
+    # Clear DerivedData and CoverageReport directories
     dirs = [xctest_derived_data_dir, xctest_report_dir]
     valid_dirpaths = [
         x for x in dirs if os.path.exists(x) and os.path.isdir(x)]
     for dirpath in valid_dirpaths:
         shutil.rmtree(dirpath)
+
+    # Recreate appdata directories
+    setup_appdata_directory()
 
     workspace_file = os.path.join(project_dir, 'IBAMobileBank.xcworkspace')
     xcpretty_output = os.path.join(xctest_logs_dir, 'xcpretty_tests.html')
@@ -399,13 +403,17 @@ def run_tests():
             sys.exit(1)
 
 
-def setup(workdir: str):
+def setup_appdata_directory():
     # Appdata root directory
     Path(xctest_appdata_dir).mkdir(parents=True, exist_ok=True)
     # Logs directory
     Path(xctest_logs_dir).mkdir(parents=True, exist_ok=True)
     # CoverageReport directory
     Path(xctest_report_dir).mkdir(parents=True, exist_ok=True)
+
+
+def setup(workdir: str):
+    setup_appdata_directory()
 
     # Store project_dir in global variable
     global project_dir
