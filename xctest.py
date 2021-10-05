@@ -23,11 +23,15 @@ project_dir = ''
 
 
 def main(input_file: str):
+    # Validate and load squads file
+    squads_data = load_squads_file(input_file)
+
     run_tests()
 
     # Raw report json file
     raw_report_file = '{dir}/raw_report.json'.format(
-        dir=xctest_derived_data_dir)
+        dir=xctest_derived_data_dir
+    )
 
     # Check if raw report file exists
     if not os.path.exists(raw_report_file) and \
@@ -42,9 +46,6 @@ def main(input_file: str):
     report_data = open(raw_report_file, 'r')
     report = json.loads(report_data.read())
 
-    # Squad config file
-    configs = load_input_file(input_file)
-
     # Flatten all files, remove project directory from path, remove functions
     all_files = flatten([x['files'] for x in report['targets']])
     for i in range(len(all_files)):
@@ -54,12 +55,12 @@ def main(input_file: str):
         )
         all_files[i].pop('functions', None)
 
-    # Squad names listed in config file
-    squad_names = [x['name'] for x in configs]
+    # Squad names listed in squads file
+    squad_names = [x['name'] for x in squads_data]
 
     # Flat list of all squad files
     files = flatten(
-        [process_files_for_squad(all_files, configs, x) for x in squad_names]
+        [process_files_for_squad(all_files, squads_data, x) for x in squad_names]
     )
 
     # Check if files are empty
@@ -87,15 +88,20 @@ def flatten(t: list):
     return [item for sublist in t for item in sublist]
 
 
-def load_input_file(file):
+def load_squads_file(file):
     # Load dataframe
-    df = pd.read_csv('{dir}/squads.csv'.format(dir=scriptdir), sep=";")
+    df = pd.read_csv(file, sep=";")
 
     # Validate dataframe
-    if df['Squad'].isnull() or df['Filename'].isnull():
+    if not set(['Squad','Filename']).issubset(df.columns):
         print(
-            '\n\n\u26A0\uFE0F  \033[1mInput file must be a valid csv file \
-            with following columns: \'Squad\', \'Filename\'\033[0m'
+            '\n\n\u26A0\uFE0F  \033[1mInput file must be a valid csv file with following columns: \'Squad\', \'Filename\'.\033[0m\n'
+        )
+        sys.exit(1)
+    elif df['Squad'].isnull().values.any() \
+         or df['Filename'].isnull().values.any():
+        print(
+            '\n\n\u26A0\uFE0F  \033[1mInput file has null values.\033[0m\n'
         )
         sys.exit(1)
 
@@ -112,23 +118,23 @@ def load_input_file(file):
     df.columns = ['name', 'filenames']
 
     # Export dataframe to json
-    configs = df.to_json(orient='records', indent=4)
+    squads_data = df.to_json(orient='records', indent=4)
 
     # This part is important.
     # We have to parse json string once more because pandas.DataFrame.to_json
     # adds unnecessary escaping backlashes to path field values.
-    configs = json.loads(configs)
+    squads_data = json.loads(squads_data)
 
-    return configs
+    return squads_data
 
 
-def process_files_for_squad(all_files: list, configs: list, squad_name: str):
+def process_files_for_squad(all_files: list, squads_data: list, squad_name: str):
     # Filenames for specified squad
     squad_filenames = flatten(
-        [x['filenames'] for x in configs if x['name'] == squad_name]
+        [x['filenames'] for x in squads_data if x['name'] == squad_name]
     )
 
-    # Check if filenames are not empty in config file
+    # Check if filenames are not empty in squads file
     if not squad_filenames:
         print(
             '\n\u26A0\uFE0F  Filenames for squad {} must be provided \
