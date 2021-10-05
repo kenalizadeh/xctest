@@ -11,13 +11,26 @@ A Tool for delivering squad-specific code coverage report.
 
 # Usage
 
-* -i --input Path to input CSV file<br />
-Provide an input CSV file which contains two required columns `Squad` and `Filename`. Example `squads.csv` file is present in the repository.<br />
+<h2>generate</h2>
 
-* -p --path  Path to workspace diretory.<br />
+<h3>Arguments</h3>
+* -i --input | **Required**<br />
+Provide an input CSV file which contains two required columns `Squad` and `Filename`.<br />
+Example `squads.csv` file is present in the repository.<br />
+
+* -p --path | **Required**<br />
 Provide Xcode project workspace path.<br />
 
-`xctest -i ./squads.csv -p ~/Workspace/IBAMobileBank`
+* -s --skip-tests | **Optional**<br />
+Use this flag if you want to skip executing tests and generate report from last test execution results.<br />
+
+`xctest generate -i ./squads.csv -p ~/Workspace/IBAMobileBank -s`
+
+<h2>showreport</h2>
+
+Show last report files.
+
+`xctest showreport`
 
 # Screenshots
 
