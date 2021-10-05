@@ -12,12 +12,16 @@ import shutil
 sys.dont_write_bytecode = True
 
 # Global variables
+# Appdata root directory
 xctest_appdata_dir = os.path.join(os.getenv("HOME"), ".xctest")
-xctest_logs_dir = xctest_appdata_dir + 'Logs/'
-xctest_derived_data_dir = xctest_appdata_dir + 'DerivedData/'
-xctest_report_dir = xctest_appdata_dir + 'CoverageReport/'
+# Logs directory
+xctest_logs_dir = os.path.join(xctest_appdata_dir, 'logs')
+# Derived data directory
+xctest_derived_data_dir = os.path.join(xctest_appdata_dir, 'DerivedData')
+# Coverage report directory
+xctest_report_dir = os.path.join(xctest_appdata_dir, 'CoverageReport')
 # Last report directory
-xctest_last_report_dir = xctest_appdata_dir + 'LastReport/'
+xctest_last_report_dir = os.path.join(xctest_appdata_dir, 'LastReport')
 # Project directory provided by user.
 project_dir = ''
 
@@ -29,9 +33,7 @@ def main(input_file: str):
     run_tests()
 
     # Raw report json file
-    raw_report_file = '{dir}/raw_report.json'.format(
-        dir=xctest_derived_data_dir
-    )
+    raw_report_file = os.path.join(xctest_derived_data_dir, 'raw_report.json')
 
     # Check if raw report file exists
     if not os.path.exists(raw_report_file) and \
@@ -283,11 +285,11 @@ def save_report(all_files: list, files: list):
     df.index = np.arange(1, len(df)+1)
 
     # Export as csv
-    csv_report_path = "{dir}/report.csv".format(dir=xctest_report_dir)
+    csv_report_path = os.path.join(xctest_report_dir, 'report.csv')
     df.to_csv(csv_report_path, na_rep='N/A')
 
     # Export as html
-    html_report_path = "{dir}/report.html".format(dir=xctest_report_dir)
+    html_report_path = os.path.join(xctest_report_dir, 'report.html')
     df.to_html(html_report_path, na_rep='N/A')
 
     print('\n\u2139\uFE0F  Enter following command to view coverage report \
@@ -311,8 +313,8 @@ def run_tests():
     for dirpath in valid_dirpaths:
         shutil.rmtree(dirpath)
 
-    workspace_file = "{dir}/IBAMobileBank.xcworkspace".format(dir=project_dir)
-    xcpretty_output = '{dir}/xcpretty_tests.html'.format(dir=xctest_logs_dir)
+    workspace_file = os.path.join(project_dir, 'IBAMobileBank.xcworkspace')
+    xcpretty_output = os.path.join(xctest_logs_dir, 'xcpretty_tests.html')
 
     # Check tuist
     if os.path.exists('{}/Project.swift'.format(project_dir)):
@@ -378,11 +380,13 @@ def run_tests():
     else:
         print('\n\u2705 Tests succeeded!.\nProcessing results...')
 
+        raw_report_file = os.path.join(xctest_derived_data_dir, 'raw_report.json')
+
         xccov = subprocess.Popen(
             'xcrun xccov view \
             --report \
             --json {dd_path}/Logs/Test/*.xcresult > \
-            {dd_path}/raw_report.json'.format(dd_path=xctest_derived_data_dir),
+            {raw_report_file}'.format(raw_report_file=raw_report_file),
             shell=True
         )
 
