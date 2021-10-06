@@ -75,8 +75,8 @@ def main(input_file: str, skip_tests: bool):
     # Project total coverage
     print_separator()
     print(
-        '\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR PROJECT: \
-        {:.2%}\033[0m'.format(report['lineCoverage'])
+        f'\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR PROJECT: \
+        {report["lineCoverage"]:.2%}\033[0m'
     )
     print_separator()
 
@@ -141,8 +141,8 @@ def process_files_for_squad(all_files: list, squads_data: list, squad_name: str)
     # Check if filenames are not empty in squads file
     if not squad_filenames:
         print(
-            '\n\u26A0\uFE0F  Filenames for squad {} must be provided \
-            for coverage report.'.format(squad_name)
+            f'\n\u26A0\uFE0F  Filenames for squad {squad_name} must be provided \
+            for coverage report.'
         )
         return []
 
@@ -163,12 +163,8 @@ def process_files_for_squad(all_files: list, squads_data: list, squad_name: str)
     print_separator()
 
     print(
-        '\n\u2705 Done! Coverage report generated from {} out of \
-        {} files for {}.\n'.format(
-            len(files),
-            len(squad_filenames),
-            squad_name
-        )
+        f'\n\u2705 Done! Coverage report generated from {len(files)} out of \
+        {len(squad_filenames)} files for {squad_name}.\n'
     )
 
     # Filenames from processed squad files
@@ -181,11 +177,9 @@ def process_files_for_squad(all_files: list, squads_data: list, squad_name: str)
     # Report missing files
     if missing_files:
         print(
-            '\u26A0\uFE0F  {count} File(s) not found:'.format(
-                count=len(missing_files)
-            )
+            f'\u26A0\uFE0F  {len(missing_files)} File(s) not found:'
         )
-        [print(' - {}'.format(x)) for x in missing_files]
+        [print(f' - {x}') for x in missing_files]
 
     # Total coverage for squad files
     squad_total_coverage = total_coverage(files)
@@ -195,10 +189,7 @@ def process_files_for_squad(all_files: list, squads_data: list, squad_name: str)
         files[i]['squad_total_coverage'] = squad_total_coverage
 
     print(
-        '\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR {}: {:.2%}\033[0m'.format(
-            squad_name,
-            squad_total_coverage
-        )
+        f'\n\u2139\uFE0F  \033[1mTOTAL COVERAGE FOR {squad_name}: {squad_total_coverage:.2%}\033[0m'
     )
 
     print_separator()
@@ -222,7 +213,7 @@ def dataframe_from_files(files: list):
 
     # Format Line Coverage column as percentage
     df['lineCoverage'] = pd.Series(
-        ["{0:.2f}%".format(val * 100) for val in df['lineCoverage']],
+        [f'{val:.2%}' for val in df['lineCoverage']],
         index=df.index
     )
 
@@ -237,7 +228,7 @@ def dataframe_for_squad_files(files: list):
 
     # Format Squad Coverage column as percentage
     df['squad_total_coverage'] = pd.Series(
-        ["{0:.2f}%".format(val * 100) for val in df['squad_total_coverage']],
+        [f'{val:.2%}' for val in df['lineCoverage']],
         index=df.index
     )
 
@@ -305,9 +296,9 @@ def save_report(all_files: list, files: list):
 
 def print_report(csv_report_path: str, html_report_path: str):
     print('\n\u2139\uFE0F  Enter following command to view coverage report in CSV format.')
-    print('>  open {path}\n'.format(path=csv_report_path))
+    print(f'>  open {csv_report_path}\n')
     print('\n\u2139\uFE0F  Enter following command to view coverage report in HTML format.')
-    print('>  open {path}\n'.format(path=html_report_path))
+    print(f'>  open {html_report_path}\n')
 
 
 def run_tests():
@@ -325,7 +316,7 @@ def run_tests():
     xcpretty_output = os.path.join(xctest_logs_dir, 'xcpretty_tests.html')
 
     # Check tuist
-    if os.path.exists('{}/Project.swift'.format(project_dir)):
+    if os.path.exists(f'{project_dir}/Project.swift'):
         print('- Generating project with Tuist...')
         tuist_generate = subprocess.Popen(
             [
@@ -348,28 +339,25 @@ def run_tests():
     pipefail.communicate()
 
     xcodebuild = subprocess.Popen(
-        'xcodebuild \
+        f'xcodebuild \
         test \
         -workspace {workspace_file} \
         -scheme IBAMobileBank-Production \
         -sdk iphonesimulator \
         -destination platform="iOS Simulator,name=iPhone 11 Pro" \
-        -derivedDataPath {dd_path} \
-        -enableCodeCoverage YES'.format(
-            workspace_file=workspace_file,
-            dd_path=xctest_derived_data_dir
-        ),
+        -derivedDataPath {xctest_derived_data_dir} \
+        -enableCodeCoverage YES',
         shell=True,
         stdout=subprocess.PIPE
         )
 
     xcpretty = subprocess.Popen(
-        'xcpretty \
+        f'xcpretty \
         -t \
         -s \
         -c \
         --report html \
-        --output {xcpretty_output}'.format(xcpretty_output=xcpretty_output),
+        --output {xcpretty_output}',
         shell=True,
         stdin=xcodebuild.stdout
         )
@@ -391,13 +379,10 @@ def run_tests():
         raw_report_file = os.path.join(xctest_derived_data_dir, 'raw_report.json')
 
         xccov = subprocess.Popen(
-            'xcrun xccov view \
+            f'xcrun xccov view \
             --report \
-            --json {dd_path}/Logs/Test/*.xcresult > \
-            {raw_report_file}'.format(
-                dd_path=xctest_derived_data_dir,
-                raw_report_file=raw_report_file
-            ),
+            --json {xctest_derived_data_dir}/Logs/Test/*.xcresult > \
+            {raw_report_file}',
             shell=True
         )
 
