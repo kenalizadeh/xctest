@@ -465,9 +465,6 @@ def parse_arguments():
     run.add_argument('-p', '--path', dest='path', type=dir_path,
                         required=True, help='Path to workspace diretory.')
 
-    # Show last generated results.
-    show_last = subparser.add_parser('showreport', help='Show reports from last generate execution.')
-
     # Generate report from xcresult file.
     generate = subparser.add_parser('generate', help='Generate coverage report from provided test results.')
 
@@ -478,6 +475,9 @@ def parse_arguments():
     generate.add_argument('-f', '--file', dest='xcresult_file',
                           type=valid_xcresult_file,
                           required=True, help='Path to input .xcresult file.')
+
+    # Show last generated results.
+    show_last = subparser.add_parser('showreport', help='Show reports from last generate execution.')
 
     return parser.parse_args()
 
