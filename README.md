@@ -14,9 +14,8 @@ Or use the script directly `venv/bin/python3 <path-to-project>/packaged/xctest/x
 
 # Usage
 
-<h2>generate</h2>
-
-<h3>Arguments</h3>
+<h2>xctest run [args]</h2></br>
+Run tests and generate coverage report from results.
 
 * -i --input | **Required**<br />
 Provide an input CSV file which contains two required columns `Squad` and `Filename`.<br />
@@ -24,17 +23,17 @@ Example `squads.csv` file is present in the repository.<br />
 
 * -p --path | **Required**<br />
 Provide Xcode project workspace path.<br />
+<h2>xctest generate [args]</h2></br>
+Generate coverage report from provided test results.
 
-* -s --skip-tests | **Optional**<br />
-Use this flag if you want to skip executing tests and generate report from last test execution results.<br />
+* -i --input | **Required**<br />
+Provide an input `.csv` file which contains two required columns `Squad` and `Filename`.<br />
+Example `squads.csv` file is present in the repository.<br />
 
-`xctest generate -i ./squads.csv -p ~/Workspace/IBAMobileBank -s`
-
-<h2>showreport</h2>
-
-Show last report files.
-
-`xctest showreport`
+* -f --file | **Required**<br />
+Provide an input `.xcresult` file.<br />
+<h2>xctest showreport</h2>
+Show reports from last generate execution.
 
 # Screenshots
 
