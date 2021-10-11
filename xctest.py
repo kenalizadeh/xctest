@@ -27,15 +27,47 @@ xctest_last_report_dir = os.path.join(xctest_appdata_dir, 'LastReport')
 project_dir = ''
 
 
-def main(input_file: str, skip_tests: bool):
+def main(input_file: str, workdir: str):
+    setup_appdata_directory()
+
+    # Store project_dir in global variable
+    global project_dir
+
+    # Get normalized absolute path from passed parameter
+    project_dir = os.path.abspath(workdir)
+
     # Validate and load squads file
     squads_data = load_squads_file(input_file)
 
-    if not skip_tests:
-        run_tests()
+    xcresult_file = run_tests()
 
-    # Raw report json file
+    process_xcresult(xcresult_file, squads_data)
+
+
+def process_xcresult(file, squads_data):
+    # Full path to report json file.
     raw_report_file = os.path.join(xctest_derived_data_dir, 'raw_report.json')
+
+    if not file:
+        print('\n\n\u26A0\uFE0F  \033[1mTest execution failed. \nTest result file was not found.\033[0m')
+        sys.exit(1)
+
+    xccov = subprocess.Popen(
+        f'xcrun xccov view \
+        --report \
+        --json {file} > {raw_report_file}',
+        shell=True
+    )
+
+    (stdout, stderr) = xccov.communicate()
+
+    xccov_returncode = xccov.wait()
+
+    if xccov_returncode != 0:
+        print_separator()
+        print('\n\n\u26A0\uFE0F  \033[1mXccov failed:\033[0m')
+        print(stdout)
+        sys.exit(1)
 
     # Check if raw report file exists
     if not os.path.exists(raw_report_file) and \
@@ -368,33 +400,21 @@ def run_tests():
 
     xcodebuild_returncode = xcodebuild.wait()
 
-    # stdout, stderr = xcodebuild.communicate()
-
     if xcodebuild_returncode != 0:
-        print('\n\n\u26A0\uFE0F  \033[1mTest execution failed. \nSee the logs for more detail.\033[0m')
+        print('\n\n\u26A0\uFE0F  \033[1mTest execution failed. \nSee the logs for more details.\033[0m')
         sys.exit(1)
-    else:
-        print('\n\u2705 Tests succeeded!.\nProcessing results...')
 
-        raw_report_file = os.path.join(xctest_derived_data_dir, 'raw_report.json')
+    print('\n\u2705 Tests succeeded!.\nProcessing results...')
 
-        xccov = subprocess.Popen(
-            f'xcrun xccov view \
-            --report \
-            --json {xctest_derived_data_dir}/Logs/Test/*.xcresult > \
-            {raw_report_file}',
-            shell=True
-        )
+    return get_derived_data_xcresult_filepath()
 
-        (stdout, stderr) = xccov.communicate()
 
-        xccov_returncode = xccov.wait()
+def get_derived_data_xcresult_filepath():
+    test_result_path = os.path.join(xctest_derived_data_dir, '/Logs/Test/')
 
-        if xccov_returncode != 0:
-            print_separator()
-            print('\n\n\u26A0\uFE0F  \033[1mXccov failed:\033[0m')
-            print(stdout)
-            sys.exit(1)
+    xcresult_files = glob.glob(os.path.join(test_result_path, '*.xcresult'))
+
+    return next(iter(xcresult_files), None)
 
 
 def setup_appdata_directory():
@@ -404,15 +424,6 @@ def setup_appdata_directory():
     Path(xctest_logs_dir).mkdir(parents=True, exist_ok=True)
     # CoverageReport directory
     Path(xctest_report_dir).mkdir(parents=True, exist_ok=True)
-
-
-def setup(workdir: str):
-    setup_appdata_directory()
-
-    # Store project_dir in global variable
-    global project_dir
-    # Get normalized absolute path from passed parameter
-    project_dir = os.path.abspath(workdir)
 
 
 def dir_path(param):
@@ -425,28 +436,48 @@ def dir_path(param):
 def valid_csv_file(param):
     base, ext = os.path.splitext(param)
     if ext.lower() != '.csv':
-        raise argparse.ArgumentTypeError('Input file must have csv extension.')
+        raise argparse.ArgumentTypeError('Input file must have .csv extension.')
+    return param
+
+
+def valid_xcresult_file(param):
+    base, ext = os.path.splitext(param)
+    if ext.lower() != '.xcresult':
+        raise argparse.ArgumentTypeError('Input file must have .xcresult extension.')
     return param
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description='Squad-based coverage reporting.')
+    parser = argparse.ArgumentParser(description='Squad-based coverage reporting.')
 
     subparser = parser.add_subparsers(dest='command')
 
-    generate = subparser.add_parser('generate', help='Generate squad based coverage report from test execution results.')
-    show_last = subparser.add_parser('showreport', help='Show last report files.')
+    # Run tests and generate report after the test execution.
+    run = subparser.add_parser(
+        'run',
+        help='Run tests and generate coverage report from results.'
+    )
+
+    run.add_argument('-i', '--input', dest='input_file',
+                        type=valid_csv_file,
+                        required=True, help='Path to input CSV file.')
+
+    run.add_argument('-p', '--path', dest='path', type=dir_path,
+                        required=True, help='Path to workspace diretory.')
+
+    # Show last generated results.
+    show_last = subparser.add_parser('showreport', help='Show reports from last generate execution.')
+
+    # Generate report from xcresult file.
+    generate = subparser.add_parser('generate', help='Generate coverage report from provided test results.')
 
     generate.add_argument('-i', '--input', dest='input_file',
                         type=valid_csv_file,
                         required=True, help='Path to input CSV file.')
 
-    generate.add_argument('-p', '--path', dest='path', type=dir_path,
-                        required=True, help='Path to workspace diretory.')
-
-    generate.add_argument('-s', '--skip-tests', dest='skip_tests', action='store_true',
-                        required=False, help='Skip executing tests and generate report from last test execution results.')
+    generate.add_argument('-f', '--file', dest='xcresult_file',
+                          type=valid_xcresult_file,
+                          required=True, help='Path to input .xcresult file.')
 
     return parser.parse_args()
 
@@ -455,9 +486,13 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     try:
+        if args.command == 'run':
+            main(input_file=args.input_file, workdir=args.path)
         if args.command == 'generate':
-            setup(workdir=args.path)
-            main(input_file=args.input_file, skip_tests=args.skip_tests)
+            # Validate and load squads file
+            squads_data = load_squads_file(args.input_file)
+
+            process_xcresult(args.xcresult_file, squads_data)
         elif args.command == 'showreport':
             print_report(
                 os.path.join(xctest_last_report_dir, 'report.csv'),
