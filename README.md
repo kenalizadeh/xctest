@@ -1,6 +1,6 @@
 # xctest
 
-A Tool for delivering squad-specific code coverage report.
+A Tool for delivering squad-specific code coverage report with Pandas.
 
 # Installation
 
