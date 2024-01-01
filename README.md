@@ -1,3 +1,5 @@
+:no_entry: [DEPRECATED] Active at https://github.com/kenalizadeh/xctest_rs/
+
 # xctest
 
 A Tool for delivering squad-specific code coverage report with Pandas.
