@@ -1,4 +1,4 @@
-## :no_entry: [DEPRECATED] Active at [kenalizadeh/xctest_rs](https://github.com/kenalizadeh/xctest_rs)
+## :no_entry: [DEPRECATED] Active at [kenalizadeh/xcreport](https://github.com/kenalizadeh/xcreport)
 
 # xctest
 
